@@ -20,7 +20,8 @@ const muscleGroupOrder: MuscleGroup[] = [
 
 export function ExercisePickerScreen({ routineName }: Props) {
   const { exercises, customExercises, activeRoutineId, routines, addExerciseToRoutine, setShowExercisePicker, anthropicApiKey } = useStore()
-  const allExercises = useMemo(() => [...exercises, ...customExercises], [exercises, customExercises])
+  // Los ejercicios propios borrados (archivados) no se ofrecen para agregar.
+  const allExercises = useMemo(() => [...exercises, ...customExercises.filter((e) => !e.archived)], [exercises, customExercises])
   const [search, setSearch] = useState('')
   const [selectedGroup, setSelectedGroup] = useState<MuscleGroup | null>(null)
   const [detailExercise, setDetailExercise] = useState<Exercise | null>(null)
@@ -47,7 +48,9 @@ export function ExercisePickerScreen({ routineName }: Props) {
     setAiError(false)
     setAiSuggestion(null)
     try {
-      const candidates = allExercises.filter(ex => !addedIds.has(ex.id)).slice(0, 60)
+      // La lista entera: cortarla en 60 dejaba afuera los ejercicios propios
+      // (van al final) y los últimos del catálogo, entre ellos los del plan de Mile.
+      const candidates = allExercises.filter(ex => !addedIds.has(ex.id))
       const currentNames = routine.exercises
         .map(re => allExercises.find(e => e.id === re.exerciseId)?.nameEs)
         .filter(Boolean) as string[]

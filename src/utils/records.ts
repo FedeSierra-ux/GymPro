@@ -16,9 +16,13 @@ export type RecordKind = 'kg' | 'reps' | 'tiempo'
 
 export function recordKindFor(exercise: Exercise | undefined, sets: { kg: number }[]): RecordKind {
   if (isDurationExercise(exercise)) return 'tiempo'
-  // Sin kilos en ninguna serie es un ejercicio a peso corporal: progresa en
-  // repeticiones (dominadas, abdominales, fondos).
-  return sets.some((s) => s.kg > 0) ? 'kg' : 'reps'
+  // Sin kilos en la mayoría de las series es un ejercicio a peso corporal:
+  // progresa en repeticiones (dominadas, abdominales, fondos). Se decide por
+  // mayoría y no por "alguna serie con kilos": una sola dominada con lastre
+  // pasaba todo el historial a kilos y borraba el récord de reps.
+  if (sets.length === 0) return 'reps'
+  const conKilos = sets.filter((s) => s.kg > 0).length
+  return conKilos * 2 > sets.length ? 'kg' : 'reps'
 }
 
 /**

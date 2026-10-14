@@ -1,5 +1,6 @@
 import type { Exercise, RoutineExercise, Workout } from '../types'
 import { formatKg } from './format'
+import { inferEquipmentType } from './exerciseMatch'
 
 /**
  * Doble progresión: se mantiene el peso hasta completar TODAS las series en el
@@ -28,7 +29,9 @@ const STALE_DAYS = 21
 
 /** Salto de peso según el equipamiento, redondeado a lo que hay en un gimnasio. */
 export function incrementFor(exercise?: Exercise | null): number {
-  switch (exercise?.equipmentType) {
+  // Los ejercicios propios viejos pueden no tener el tipo: se deduce del texto.
+  const tipo = exercise?.equipmentType ?? (exercise?.equipment ? inferEquipmentType(exercise.equipment) : undefined)
+  switch (tipo) {
     case 'mancuernas':
       return 2 // 1 kg por lado, que es el salto real del rack
     case 'kettlebell':
@@ -120,7 +123,21 @@ export function suggestNextWeight(
   const bodyweight = last.kg <= 0
 
   if (daysAgo > STALE_DAYS && !bodyweight) {
-    const kg = roundToStep(last.kg * 0.9, step || 2.5)
+    const paso = step || 2.5
+    // Un 10 % abajo, en un peso que exista. Con pesos chicos el redondeo puede
+    // dar lo mismo o más (4 kg en máquina → 5): ahí se baja un salto entero.
+    let kg = roundToStep(last.kg * 0.9, paso)
+    if (kg >= last.kg) kg = last.kg - paso
+    // Si bajar un salto es demasiado (10 kg en polea → 5) o deja la barra en
+    // cero, no se inventa un peso: se mantiene y se pide calma.
+    if (kg <= 0 || kg < last.kg * 0.75) {
+      return {
+        kg: last.kg,
+        reason: 'mantener',
+        note: `Pasaron ${Math.round(daysAgo)} días: arrancá con ${formatKg(last.kg)} kg con calma y, si cuesta, bajá un poco.`,
+        targetReps: routineExercise.repsMax,
+      }
+    }
     return {
       kg,
       reason: 'bajar',
@@ -142,11 +159,27 @@ export function suggestNextWeight(
         targetReps: routineExercise.repsMax + 2,
       }
     }
-    const kg = roundToStep(last.kg + step, step)
+    // Un salto exacto desde el peso de hoy, al medio kilo. Redondear al
+    // múltiplo del salto convertía 3 + 2 en 6 (Math.round(2,5) = 3).
+    const kg = Math.round((last.kg + step) * 2) / 2
     return {
       kg,
       reason: 'subir',
       note: `${last.reps.join('/')} la última vez: subí a ${formatKg(kg)} kg y volvé a ${routineExercise.repsMin} reps.`,
+      targetReps: routineExercise.repsMin,
+    }
+  }
+
+  // Muy lejos del piso del rango (10 kg × 1 con objetivo de 10): mantener el
+  // peso para siempre no lleva a ningún lado. Se baja un salto.
+  const mejorReps = Math.max(...last.reps)
+  const lejosDelPiso = Math.max(1, Math.floor(routineExercise.repsMin * 0.7))
+  if (!bodyweight && step > 0 && mejorReps < lejosDelPiso && last.kg - step > 0) {
+    const kg = Math.round((last.kg - step) * 2) / 2
+    return {
+      kg,
+      reason: 'bajar',
+      note: `La última vez llegaste a ${mejorReps} con ${formatKg(last.kg)} kg: bajá a ${formatKg(kg)} kg y apuntá a ${rangeLabel(routineExercise)} reps.`,
       targetReps: routineExercise.repsMin,
     }
   }

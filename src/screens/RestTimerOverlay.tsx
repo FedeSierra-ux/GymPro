@@ -61,7 +61,9 @@ export function RestTimerOverlay({ onMinimize }: { onMinimize?: () => void }) {
   })()
 
   return (
-    <div className="absolute inset-0 bg-background/97 backdrop-blur-sm flex flex-col items-center justify-between py-8 z-50 screen-enter">
+    // bg-background/97 no existe en la escala de opacidades de Tailwind 3: la
+    // clase no se generaba y el panel quedaba transparente sobre el entreno.
+    <div role="dialog" aria-modal="true" aria-label="Descanso" className="absolute inset-0 backdrop-blur-sm flex flex-col items-center justify-between py-8 z-50 screen-enter" style={{ background: 'rgba(12,14,20,0.97)' }}>
       <div className="text-center flex flex-col items-center gap-2">
         <p className="text-dim font-bold text-sm tracking-widest uppercase">Descanso</p>
         {onMinimize && (
@@ -111,7 +113,10 @@ export function RestTimerOverlay({ onMinimize }: { onMinimize?: () => void }) {
               Serie {lastCompletedSet.setIdx + 1} completada · {lastExercise.nameEs}
             </p>
             <p className="text-white font-semibold text-lg">
-              {formatLoad(lastCompletedSet.kg, lastCompletedSet.reps)}
+              {/* Los ejercicios por tiempo decían "0 reps". */}
+              {isDurationExercise(lastExercise)
+                ? `${(activeWorkout.exercises.find((e) => e.exerciseId === lastCompletedSet.exerciseId)?.sets[lastCompletedSet.setIdx]?.duration ?? '').replace('.', ',')} ${durationUnit(lastExercise) === 'min' ? 'min' : 's'}`
+                : formatLoad(lastCompletedSet.kg, lastCompletedSet.reps)}
             </p>
           </div>
         )}
@@ -166,6 +171,7 @@ export function RestTimerOverlay({ onMinimize }: { onMinimize?: () => void }) {
               key={p.seconds}
               onClick={() => setRestPreset(p.seconds)}
               aria-pressed={restTotalSeconds === p.seconds}
+              style={{ minHeight: 44 }}
               className={`num py-2 rounded-full text-[13px] font-medium transition-colors border ${
                 restTotalSeconds === p.seconds
                   ? 'bg-surface text-primary border-primary'

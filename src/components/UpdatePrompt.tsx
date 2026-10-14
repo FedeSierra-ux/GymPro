@@ -10,7 +10,13 @@ export function UpdatePrompt() {
   const {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
-  } = useRegisterSW()
+  } = useRegisterSW({
+    // Una PWA que nunca se cierra del todo no volvía a buscar versiones nuevas.
+    onRegisteredSW(_url, registration) {
+      if (!registration) return
+      setInterval(() => { void registration.update().catch(() => {}) }, 60 * 60 * 1000)
+    },
+  })
 
   if (!needRefresh) return null
 

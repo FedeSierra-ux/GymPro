@@ -25,9 +25,17 @@ export function semanaDelPrograma(inicio: number, nowTs: number): number {
   return Math.round((lunesDe(nowTs) - inicio) / (7 * 86400000)) + 1
 }
 
-/** Inicio para que hoy caiga en la semana `semana`. */
+/**
+ * Inicio para que hoy caiga en la semana `semana`. Un domingo, la semana que
+ * se elige es la que arranca mañana: es el día en que uno se organiza, y
+ * contarla desde el lunes que pasó hacía que al otro día ya fuera la siguiente.
+ */
 export function inicioParaSemana(semana: number, nowTs: number): number {
-  const lunes = new Date(lunesDe(nowTs))
+  const hoy = new Date(nowTs)
+  const referencia = hoy.getDay() === 0
+    ? new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 1, 12).getTime()
+    : nowTs
+  const lunes = new Date(lunesDe(referencia))
   return new Date(lunes.getFullYear(), lunes.getMonth(), lunes.getDate() - (semana - 1) * 7).getTime()
 }
 

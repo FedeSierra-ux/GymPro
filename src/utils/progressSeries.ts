@@ -74,6 +74,15 @@ function valorDeSerie(kind: RecordKind, s: { kg: number; reps: number; durationS
   }
 }
 
+/**
+ * Para comparar dos series del mismo ejercicio: con kilos manda el peso y, a
+ * igual peso, las reps. Así 40 × 12 supera a 40 × 8, que es justo lo que pide
+ * la doble progresión antes de subir el peso.
+ */
+function puntajeDeSerie(kind: RecordKind, s: { kg: number; reps: number; durationSec?: number }): number {
+  return kind === 'kg' ? s.kg * 1000 + s.reps : valorDeSerie(kind, s)
+}
+
 /** Unidad que se muestra al lado del número. */
 export function unidadDe(kind: RecordKind): string {
   return kind === 'kg' ? 'kg' : kind === 'reps' ? 'reps' : 'seg'
@@ -109,20 +118,27 @@ export function buildProgressSeries(
   }
 
   const porEjercicio = new Map<string, SessionPoint[]>()
+  const puntajes = new Map<string, number[]>()
   for (const w of terminados) {
     for (const we of w.exercises) {
       const kind = recordKindFor(porId.get(we.exerciseId), seriesTodas.get(we.exerciseId) ?? [])
       let mejor: SessionPoint | null = null
+      let mejorPuntaje = -Infinity
       for (const s of we.sets) {
         if (s.isWarmup) continue
         const value = valorDeSerie(kind, s)
         if (value <= 0) continue
-        if (!mejor || value > mejor.value) mejor = { date: w.startedAt, value, reps: s.reps }
+        const puntaje = puntajeDeSerie(kind, s)
+        if (puntaje > mejorPuntaje) {
+          mejorPuntaje = puntaje
+          mejor = { date: w.startedAt, value, reps: s.reps }
+        }
       }
       if (!mejor) continue
       const acc = porEjercicio.get(we.exerciseId) ?? []
       acc.push(mejor)
       porEjercicio.set(we.exerciseId, acc)
+      puntajes.set(we.exerciseId, [...(puntajes.get(we.exerciseId) ?? []), mejorPuntaje])
     }
   }
 
@@ -147,7 +163,7 @@ export function buildProgressSeries(
       change: Math.round((ultimo.value - baseline) * 100) / 100,
       sessions: points.length,
       lastDate: ultimo.date,
-      sinMejora: sesionesSinMejora(points.map((p) => p.value)),
+      sinMejora: sesionesSinMejora(puntajes.get(exerciseId) ?? points.map((p) => p.value)),
     })
   }
   return salida

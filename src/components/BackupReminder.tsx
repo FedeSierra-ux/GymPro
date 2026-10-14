@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useHoy } from '../utils/useHoy'
 import { useStore } from '../store/useStore'
 import { S } from '../theme'
 
@@ -17,7 +18,7 @@ const ENTRENOS_MINIMOS = 5
  */
 export function BackupReminder() {
   const { workouts, lastBackupAt, setActiveTab } = useStore()
-  const [nowTs] = useState(() => Date.now())
+  const nowTs = useHoy()
   const [oculto, setOculto] = useState(false)
 
   const terminados = workouts.filter((w) => w.finishedAt)
@@ -27,13 +28,16 @@ export function BackupReminder() {
   const desde = lastBackupAt ?? Math.min(...terminados.map((w) => w.startedAt))
   const dias = Math.floor((nowTs - desde) / 86400000)
   if (dias < DIAS_ENTRE_AVISOS) return null
+  // Sólo los que se hicieron después del último backup: contaba todos.
+  const sinCopia = lastBackupAt ? terminados.filter((w) => (w.finishedAt ?? w.startedAt) > lastBackupAt).length : terminados.length
+  if (sinCopia === 0) return null
 
   // Una línea al final de Inicio: está para recordar, no para tapar lo de hoy.
   return (
     <div style={{ padding: '16px 22px 0' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 4px 6px 12px', borderRadius: 12, border: `1px solid ${S.line2}` }}>
         <span style={{ flex: 1, minWidth: 0, fontSize: 12, color: S.dim }}>
-          <span className="num" style={{ color: S.ink }}>{terminados.length}</span> entrenos sin copia
+          <span className="num" style={{ color: S.ink }}>{sinCopia}</span> {sinCopia === 1 ? 'entreno' : 'entrenos'} sin copia
           {lastBackupAt ? ` · la última hace ${dias} días` : ''}
         </span>
         <button

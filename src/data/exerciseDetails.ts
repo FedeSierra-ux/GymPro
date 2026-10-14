@@ -22,7 +22,7 @@ export const exerciseDetails: Record<string, ExerciseDetail> = {
       'Tocá el pecho sin rebotar y empujá hasta extender los codos sin bloquearlos de golpe.',
     ],
     tips: [
-      'Agarre hasta 1,5× el ancho biacromial: reduce el riesgo de hombro y el 1RM cambia solo ~5%',
+      'Agarre hasta 1,5× el ancho biacromial: reduce el riesgo de hombro y la fuerza máxima cambia solo ~5%',
       'Bajar completo hasta el pecho: el rango completo rinde más que los parciales cortos',
       'Excéntrica de ~2 s, sin frenar 5 s de más: entre 0,5 y 8 s por rep el resultado es el mismo',
       'Dosis: 3-4 series de 5-10 reps, 2-3 min de descanso, dejando 0-2 reps en reserva',

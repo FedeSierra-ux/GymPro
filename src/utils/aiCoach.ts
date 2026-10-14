@@ -4,8 +4,22 @@
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages'
 const MODEL = 'claude-haiku-4-5-20251001'
 
+/** Sin respuesta en este tiempo se corta: con la red colgada el spinner del resumen no terminaba nunca. */
+const TIMEOUT_MS = 15000
+
 async function callAnthropic(apiKey: string, system: string, userPrompt: string, maxTokens = 300): Promise<string> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
+  try {
+    return await pedir(apiKey, system, userPrompt, maxTokens, controller.signal)
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+async function pedir(apiKey: string, system: string, userPrompt: string, maxTokens: number, signal: AbortSignal): Promise<string> {
   const res = await fetch(ANTHROPIC_API_URL, {
+    signal,
     method: 'POST',
     headers: {
       'content-type': 'application/json',

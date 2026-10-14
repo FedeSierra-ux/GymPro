@@ -32,7 +32,7 @@ export function ExercisePickerSheet({
   const lista = useMemo(() => {
     const q = busqueda.trim().toLowerCase()
     return exercises
-      .filter((e) => !excluidos.has(e.id))
+      .filter((e) => !excluidos.has(e.id) && !e.archived)
       .filter((e) => (grupo ? e.muscleGroup === grupo : true))
       .filter((e) => !q || `${e.nameEs} ${e.nameArg ?? ''} ${e.equipment}`.toLowerCase().includes(q))
       .sort((a, b) => a.nameEs.localeCompare(b.nameEs, 'es', { sensitivity: 'base' }))

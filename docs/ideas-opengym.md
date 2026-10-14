@@ -15,7 +15,6 @@ desde cero.
 | --- | --- |
 | Plan semanal (una rutina por día) | ✅ `weekPlan` en la agenda |
 | Series de calentamiento | ✅ marca `W` por serie |
-| 1RM estimado | ✅ en la serie y en el PR |
 | Detección de PR en vivo | ✅ banner + toast |
 | Cargar un entreno pasado | ✅ desde la agenda |
 | Export/import JSON | ✅ backup en Ajustes |
