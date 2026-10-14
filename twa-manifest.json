@@ -19,8 +19,8 @@
     "path": "../gympro.keystore",
     "alias": "gympro"
   },
-  "appVersionCode": 4,
-  "appVersionName": "1.2.0",
+  "appVersionCode": 5,
+  "appVersionName": "1.3.0",
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://fedesierra-ux.github.io/gym/manifest.webmanifest",
