@@ -69,6 +69,21 @@ interface AppState {
   /** Lunes (dayKey) de la semana cuyo repaso ya se cerró en Inicio. */
   repasoCerrado: string | null
   cerrarRepaso: (lunesKey: string) => void
+  /** Mes ('YYYY-MM') cuyo resumen ya se cerró en Inicio. */
+  resumenMesCerrado: string | null
+  cerrarResumenMes: (clave: string) => void
+  /** Año cuyo "Tu año en el gym" ya se cerró en Inicio. */
+  wrappedCerrado: number | null
+  cerrarWrapped: (year: number) => void
+
+  /** Informe a pantalla completa abierto encima de las pestañas (no se guarda). */
+  informe: InformeAbierto | null
+  abrirInforme: (informe: InformeAbierto) => void
+  cerrarInforme: () => void
+  /** Mes que Progreso → Resumen tiene que abrir al entrar (desde la tarjeta de Inicio). */
+  progresoMes: { year: number; month: number } | null
+  abrirResumenMes: (year: number, month: number) => void
+  limpiarProgresoMes: () => void
 
   // Actions
   setActiveTab: (tab: NavTab) => void
@@ -150,6 +165,11 @@ interface AppState {
   seedData: () => void
 }
 
+/** Un informe a pantalla completa: el de un ciclo del plan o el resumen del año. */
+export type InformeAbierto =
+  | { tipo: 'ciclo'; inicio: number; fin: number }
+  | { tipo: 'anio'; year: number }
+
 export const STORAGE_KEY = 'gympro-storage-v2'
 /**
  * Versión del formato guardado. Sube cuando cambia la forma de los datos, y
@@ -179,6 +199,8 @@ function partialize(state: AppState) {
     ciclosPrograma: state.ciclosPrograma,
     inicioUso: state.inicioUso,
     repasoCerrado: state.repasoCerrado,
+    resumenMesCerrado: state.resumenMesCerrado,
+    wrappedCerrado: state.wrappedCerrado,
     planMileCompletado: state.planMileCompletado,
   }
 }
@@ -283,6 +305,10 @@ export const useStore = create<AppState>()(
       ciclosPrograma: [],
       inicioUso: null,
       repasoCerrado: null,
+      resumenMesCerrado: null,
+      wrappedCerrado: null,
+      informe: null,
+      progresoMes: null,
       planMileCompletado: false,
 
       setActiveTab: (tab) => set({ activeTab: tab }),
@@ -480,6 +506,12 @@ export const useStore = create<AppState>()(
       retomarPrograma: () => set({ programa: null }),
 
       cerrarRepaso: (lunesKey) => set({ repasoCerrado: lunesKey }),
+      cerrarResumenMes: (clave) => set({ resumenMesCerrado: clave }),
+      cerrarWrapped: (year) => set({ wrappedCerrado: year }),
+      abrirInforme: (informe) => set({ informe }),
+      cerrarInforme: () => set({ informe: null }),
+      abrirResumenMes: (year, month) => set({ activeTab: 'progreso', activeRoutineId: null, progresoMes: { year, month } }),
+      limpiarProgresoMes: () => set({ progresoMes: null }),
 
       addMeasure: (measure) =>
         set((s) => ({

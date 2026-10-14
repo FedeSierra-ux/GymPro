@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useHoy } from '../utils/useHoy'
 import { useStore } from '../store/useStore'
 import { tieneVariante, VARIANTE_LABEL } from '../utils/routineVariant'
-import { SEMANAS_PROGRAMA, SEMANA_CAMBIO, semanaDelPrograma } from '../utils/program'
+import { finDeCiclo, SEMANAS_PROGRAMA, SEMANA_CAMBIO, semanaDelPrograma } from '../utils/program'
 
 const fechaCorta = (ts: number) => new Date(ts).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })
 
@@ -11,7 +11,7 @@ const fechaCorta = (ts: number) => new Date(ts).toLocaleDateString('es-AR', { da
  * Semanas 4-6; pasada la 6 pregunta si arrancás de nuevo.
  */
 export function ProgramCard() {
-  const { routines, programa, fijarSemanaPrograma, sincronizarPrograma, terminarPrograma } = useStore()
+  const { routines, programa, fijarSemanaPrograma, sincronizarPrograma, terminarPrograma, abrirInforme } = useStore()
   const nowTs = useHoy()
   const [eligiendo, setEligiendo] = useState(false)
 
@@ -68,7 +68,14 @@ export function ProgramCard() {
       <div style={{ padding: '12px 22px 0' }}>
         <section aria-label="Plan terminado" style={caja}>
           <div style={titulo}>Terminaste las {SEMANAS_PROGRAMA} semanas del plan</div>
-          <div style={{ fontSize: 12, color: 'var(--dim)', marginTop: 2 }}>¿Arrancás de nuevo desde la semana 1?</div>
+          <button
+            className="btn-secondary"
+            onClick={() => abrirInforme({ tipo: 'ciclo', inicio: programa!.inicio, fin: finDeCiclo(programa!.inicio) })}
+            style={{ width: '100%', marginTop: 10, fontSize: 15 }}
+          >
+            Ver el informe
+          </button>
+          <div style={{ fontSize: 12, color: 'var(--dim)', marginTop: 12 }}>¿Arrancás de nuevo desde la semana 1?</div>
           <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
             <button
               onClick={() => fijarSemanaPrograma(1)}

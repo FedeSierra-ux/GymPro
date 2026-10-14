@@ -166,6 +166,26 @@ espera brazos, y el calendario corre los días que vienen.
 ("descanso 2 min", "descanso 1:30"; `src/utils/restFromNote.ts`). Elegir otro
 tiempo durante el descanso vale para ese ejercicio el resto del entreno.
 
+## Informes
+
+Los cálculos son puros y tienen tests (`src/utils/cycleReport.ts`,
+`periodSummary.ts`, `yearReview.ts`, `informes.ts`); ninguno usa 1RM.
+
+- **Fin de ciclo.** Pasada la semana 6, la tarjeta del plan ofrece *Ver el
+  informe*: asistencia por semana, récords y, por ejercicio, la mejor serie del
+  principio contra la del final. Como en la semana 4 cambian las reps, la
+  comparación limpia es dentro de cada bloque (S1→S3 y S4→S6). Los ciclos
+  anteriores y el que está en curso se abren desde Progreso → Resumen → *Ciclos*.
+- **Resumen del mes.** Progreso → Resumen muestra entrenos, series, horas y
+  récords del mes contra el mes anterior o el mismo mes del año pasado. El mes
+  en curso se compara contra los mismos días del otro. Las horas no cuentan los
+  entrenos cargados a mano ni los cerrados solos. Del 1 al 7 de cada mes, Inicio
+  ofrece el resumen del mes que terminó.
+- **Tu año en el gym.** Tarjetas estilo historia con el año calendario; el
+  primer año arranca el día que empezaste a usar la app (`inicioUso`). Aparece
+  en Inicio del 1 de diciembre al 15 de enero si hay al menos 8 entrenos, y
+  siempre desde Progreso → Resumen. Cada tarjeta se puede compartir como imagen.
+
 ## Diseño
 
 Los colores, la escala tipográfica (11/12/13/15/17/22/26/32) y los radios

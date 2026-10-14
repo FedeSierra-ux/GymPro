@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useHoy } from '../utils/useHoy'
 import { useStore, useAllExercises } from '../store/useStore'
 import { muscleGroupConfig } from '../data/muscleGroups'
@@ -9,12 +9,17 @@ import { resumenMensual, seriesPorGrupo } from '../utils/volume'
 import { BodyFigure } from '../components/BodyFigure'
 import { MuscleIcon } from '../components/MuscleIcon'
 import { formatDuration } from '../utils/duration'
-import { S } from '../theme'
+import { R, S, T } from '../theme'
 import type { MuscleGroup } from '../types'
 import { formatKg } from '../utils/format'
+import { compararPeriodos, resumenPeriodo, type Delta } from '../utils/periodSummary'
+import {
+  ciclosParaListar, fechaLarga, rangoCiclo, rangosParaComparar, textoHoras, textoMarca, textoPct, type ModoComparacion,
+} from '../utils/informes'
+import { SEMANAS_PROGRAMA } from '../utils/program'
 
 type Period = '6s' | '3m' | '6m' | 'todo'
-type Tab = 'fuerza' | 'musculos' | 'series'
+type Tab = 'fuerza' | 'musculos' | 'resumen'
 
 
 const PERIODOS: [Period, string, number][] = [
@@ -54,16 +59,77 @@ function deltaCorto(kind: ExerciseSeries['kind'], change: number): string {
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
 
+/** Una tarjeta de cifra con el cambio contra la referencia. */
+function CifraComparada({ etiqueta, valor, delta, formato = String, record, hayReferencia }: {
+  etiqueta: string
+  valor: string
+  delta: Delta
+  formato?: (n: number) => string
+  record?: boolean
+  hayReferencia: boolean
+}) {
+  const d = delta.diferencia
+  const color = !hayReferencia || d === 0 ? S.mute : d > 0 ? S.good : S.bad
+  const texto = !hayReferencia
+    ? '—'
+    : d === 0
+      ? 'igual'
+      : `${d > 0 ? '↑' : '↓'} ${formato(Math.abs(d))}${delta.pct != null ? ` (${textoPct(delta.pct)})` : ''}`
+  return (
+    <div
+      aria-label={`${etiqueta}: ${valor}${hayReferencia ? `, ${d === 0 ? 'igual que' : d > 0 ? `${formato(Math.abs(d))} más que` : `${formato(Math.abs(d))} menos que`} la referencia` : ''}`}
+      style={{ background: S.surf2, borderRadius: R.lg, padding: '12px 12px', border: `1px solid ${S.line2}`, minWidth: 0 }}
+    >
+      <div aria-hidden="true" className="num" style={{ fontSize: T.h2, fontWeight: 700, color: record && valor !== '0' ? S.acc2 : S.ink }}>{valor}</div>
+      <div aria-hidden="true" style={{ fontSize: T.micro, color: S.dim, marginTop: 2 }}>{etiqueta}</div>
+      <div aria-hidden="true" className="num" style={{ fontSize: T.micro, fontWeight: 700, color, marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{texto}</div>
+    </div>
+  )
+}
+
+/** Ciclos del plan: el que está en curso (informe parcial) y los pasados. */
+function BloqueCiclos({ nowTs }: { nowTs: number }) {
+  const { programa, ciclosPrograma, abrirInforme } = useStore()
+  const ciclos = ciclosParaListar(programa, ciclosPrograma, nowTs)
+  if (!ciclos.length) return null
+  return (
+    <section aria-label="Ciclos del plan" style={{ background: S.surf, borderRadius: R.lg, padding: '12px 14px 4px', border: `1px solid ${S.line2}` }}>
+      <h3 style={{ fontWeight: 700, color: S.ink, fontSize: T.body }}>Ciclos</h3>
+      <ul style={{ listStyle: 'none', margin: '4px 0 0', padding: 0 }}>
+        {ciclos.map((c) => (
+          <li key={c.inicio} style={{ borderTop: `1px solid ${S.line}` }}>
+            <button
+              onClick={() => abrirInforme({ tipo: 'ciclo', inicio: c.inicio, fin: c.fin })}
+              aria-label={`Ciclo del ${rangoCiclo(c.inicio, c.fin)}${c.enCurso ? `, semana ${c.semana} de ${SEMANAS_PROGRAMA}. Ver el informe parcial` : '. Ver el informe'}`}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', minHeight: 48, background: 'none', border: 'none', padding: '6px 0', textAlign: 'left', cursor: 'pointer', color: S.ink }}
+            >
+              <span style={{ flex: 1, minWidth: 0, fontSize: T.body, fontWeight: 600 }}>
+                Ciclo {rangoCiclo(c.inicio, c.fin)}
+              </span>
+              <span style={{ fontSize: T.caption, color: c.enCurso ? S.ink : S.dim, whiteSpace: 'nowrap' }}>
+                {c.enCurso ? <>Semana <span className="num">{c.semana}</span> de <span className="num">{SEMANAS_PROGRAMA}</span></> : 'Terminado'}
+              </span>
+              <span aria-hidden="true" style={{ color: S.mute, fontSize: T.title }}>›</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
 /**
- * Series efectivas mes por mes, con el peso más alto de cada ejercicio en ese
- * mes. Reemplaza al tonelaje ("4,1 t"), que era una cifra difícil de leer.
+ * Resumen del mes: cifras contra el mes anterior (o el mismo mes del año
+ * pasado), lo destacado, y abajo las series por grupo y por ejercicio.
  */
-function SeriesTab({ nowTs }: { nowTs: number }) {
-  const { workouts } = useStore()
+function ResumenTab({ nowTs, inicial }: { nowTs: number; inicial: { year: number; month: number } | null }) {
+  const { workouts, prs, abrirInforme } = useStore()
   const exercises = useAllExercises()
   const hoy = new Date(nowTs)
-  const [cursor, setCursor] = useState(() => ({ anio: hoy.getFullYear(), mes: hoy.getMonth() }))
+  const [cursor, setCursor] = useState(() => (inicial ? { anio: inicial.year, mes: inicial.month } : { anio: hoy.getFullYear(), mes: hoy.getMonth() }))
   const [historyId, setHistoryId] = useState<string | null>(null)
+  const [modo, setModo] = useState<ModoComparacion>('anterior')
+  const [todosLosRecords, setTodosLosRecords] = useState(false)
 
   const esMesActual = cursor.anio === hoy.getFullYear() && cursor.mes === hoy.getMonth()
   const primerEntreno = useMemo(
@@ -78,6 +144,15 @@ function SeriesTab({ nowTs }: { nowTs: number }) {
     return { anio: f.getFullYear(), mes: f.getMonth() }
   })
 
+  const rangos = useMemo(() => rangosParaComparar(cursor.anio, cursor.mes, modo, nowTs), [cursor, modo, nowTs])
+  const periodo = useMemo(() => resumenPeriodo({ workouts, exercises, prs, ...rangos.actual }), [workouts, exercises, prs, rangos])
+  const referencia = useMemo(() => resumenPeriodo({ workouts, exercises, prs, ...rangos.referencia }), [workouts, exercises, prs, rangos])
+  const comparacion = compararPeriodos(periodo, referencia)
+  const hayReferencia = referencia.sesiones > 0
+  const nombreDe = (id: string) => exercises.find(e => e.id === id)?.nameEs ?? 'Ejercicio borrado'
+  const records = todosLosRecords ? periodo.records : periodo.records.slice(0, 5)
+  const entrenosDelAnio = workouts.some(w => w.finishedAt && new Date(w.startedAt).getFullYear() === hoy.getFullYear())
+
   const resumen = useMemo(() => resumenMensual(workouts, exercises, cursor.anio, cursor.mes), [workouts, exercises, cursor])
   const anterior = useMemo(() => resumenMensual(workouts, exercises, cursor.anio, cursor.mes - 1), [workouts, exercises, cursor])
   const maxAnteriorDe = useMemo(() => new Map(anterior.ejercicios.map(e => [e.exerciseId, e.maxKg])), [anterior])
@@ -88,7 +163,6 @@ function SeriesTab({ nowTs }: { nowTs: number }) {
   const ejercicios = [...resumen.ejercicios].sort((a, b) =>
     (porId.get(a.exerciseId)?.nameEs ?? '').localeCompare(porId.get(b.exerciseId)?.nameEs ?? '', 'es', { sensitivity: 'base' })
   )
-  const delta = resumen.series - anterior.series
 
   const flecha = (habilitada: boolean) => ({
     width: 44, height: 44, borderRadius: 12, border: `1px solid ${S.line2}`, background: S.surf2,
@@ -104,21 +178,87 @@ function SeriesTab({ nowTs }: { nowTs: number }) {
         <button aria-label="Mes siguiente" disabled={esMesActual} onClick={() => mover(1)} style={flecha(!esMesActual)}>›</button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-        <div style={{ background: S.surf2, borderRadius: 16, padding: '14px 12px', border: `1px solid ${S.line2}` }}>
-          <div className="num" style={{ fontSize: 22, fontWeight: 700, color: S.ink }}>{resumen.series}</div>
-          <div style={{ fontSize: 11, color: S.dim, marginTop: 3 }}>
-            Series del mes
-            {anterior.series > 0 && delta !== 0 && (
-              <span style={{ color: delta > 0 ? S.good : S.bad, fontWeight: 700 }}> {delta > 0 ? '↑' : '↓'} {Math.abs(delta)}</span>
-            )}
-          </div>
-        </div>
-        <div style={{ background: S.surf2, borderRadius: 16, padding: '14px 12px', border: `1px solid ${S.line2}` }}>
-          <div className="num" style={{ fontSize: 22, fontWeight: 700, color: S.ink }}>{resumen.sesiones}</div>
-          <div style={{ fontSize: 11, color: S.dim, marginTop: 3 }}>{resumen.sesiones === 1 ? 'Entreno' : 'Entrenos'}</div>
-        </div>
+      {/* Contra qué se compara */}
+      <div role="group" aria-label="Comparar contra" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
+        <span style={{ fontSize: T.caption, color: S.dim, marginRight: 2 }}>Contra:</span>
+        {([['anterior', 'mes anterior'], ['anioPasado', 'mismo mes del año pasado']] as [ModoComparacion, string][]).map(([m, label]) => (
+          <button
+            key={m}
+            onClick={() => setModo(m)}
+            aria-pressed={modo === m}
+            style={{
+              minHeight: 36, padding: '0 12px', borderRadius: R.sm, fontSize: T.caption, fontWeight: 600, cursor: 'pointer',
+              background: modo === m ? S.surf2 : 'transparent', color: modo === m ? S.ink : S.dim,
+              border: `1px solid ${modo === m ? S.line2 : S.line}`,
+            }}
+          >
+            {label}
+          </button>
+        ))}
       </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
+        <CifraComparada etiqueta={periodo.sesiones === 1 ? 'Entreno' : 'Entrenos'} valor={String(periodo.sesiones)} delta={comparacion.sesiones} hayReferencia={hayReferencia} />
+        <CifraComparada etiqueta="Series" valor={String(periodo.series)} delta={comparacion.series} hayReferencia={hayReferencia} />
+        <CifraComparada etiqueta="Horas" valor={textoHoras(periodo.minutos)} delta={comparacion.minutos} formato={(m) => `${textoHoras(m)} h`} hayReferencia={hayReferencia} />
+        <CifraComparada etiqueta={periodo.records.length === 1 ? 'Récord' : 'Récords'} valor={String(periodo.records.length)} delta={comparacion.records} record hayReferencia={hayReferencia} />
+      </div>
+      <p style={{ fontSize: T.micro, color: S.mute, marginTop: -4 }}>
+        {hayReferencia ? <>Contra {rangos.etiqueta}{rangos.parcial ? ', los mismos días' : ''}.</> : <>Sin entrenos en {rangos.etiqueta} para comparar.</>}
+        {periodo.conDuracion < periodo.sesiones && ' Las horas no cuentan los entrenos cargados a mano ni los que se cerraron solos.'}
+      </p>
+
+      {/* Lo destacado */}
+      {periodo.sesiones > 0 && (periodo.mayorSubida || periodo.records.length > 0 || periodo.mejorSemana) && (
+        <section aria-label="Lo destacado" style={{ background: S.surf, borderRadius: R.lg, padding: '14px 14px 10px', border: `1px solid ${S.line2}` }}>
+          <h3 style={{ fontWeight: 700, color: S.ink, fontSize: T.body }}>Lo destacado</h3>
+          {periodo.mayorSubida && (
+            <div style={{ marginTop: 10 }}>
+              <div style={{ fontSize: T.micro, color: S.mute, fontWeight: 600 }}>La mayor subida</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 2 }}>
+                <span style={{ flex: 1, minWidth: 0, fontSize: T.body, color: S.ink, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {nombreDe(periodo.mayorSubida.exerciseId)}
+                </span>
+                <span className="num" style={{ fontSize: T.body, fontWeight: 700, color: S.good }}>{textoPct(periodo.mayorSubida.pct)}</span>
+              </div>
+              <div className="num" style={{ fontSize: T.caption, color: S.dim }}>
+                {textoMarca(periodo.mayorSubida.kind, periodo.mayorSubida.antes)} → {textoMarca(periodo.mayorSubida.kind, periodo.mayorSubida.despues)}
+              </div>
+            </div>
+          )}
+          {periodo.records.length > 0 && (
+            <div style={{ marginTop: 12 }}>
+              <div style={{ fontSize: T.micro, color: S.mute, fontWeight: 600 }}>
+                🏆 Récords del mes <span className="num" style={{ color: S.acc2 }}>{periodo.records.length}</span>
+              </div>
+              <ul style={{ listStyle: 'none', margin: '2px 0 0', padding: 0 }}>
+                {records.map((r, i) => (
+                  <li key={`${r.exerciseId}-${r.fecha}-${i}`} style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '5px 0', borderTop: i ? `1px solid ${S.line}` : undefined }}>
+                    <span style={{ flex: 1, minWidth: 0, fontSize: T.body, color: S.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nombreDe(r.exerciseId)}</span>
+                    <span className="num" style={{ fontSize: T.caption, whiteSpace: 'nowrap' }}>
+                      <span style={{ color: S.acc2, fontWeight: 700 }}>{textoMarca(r.kind, r.marca)}</span>
+                      {r.anterior && <span style={{ color: S.mute }}> · antes {textoMarca(r.kind, r.anterior)}</span>}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              {periodo.records.length > 5 && (
+                <button className="btn-ghost" onClick={() => setTodosLosRecords(v => !v)} aria-expanded={todosLosRecords} style={{ fontSize: T.caption, padding: '0 4px', minHeight: 36 }}>
+                  {todosLosRecords ? 'Ver menos' : `Ver los ${periodo.records.length}`}
+                </button>
+              )}
+            </div>
+          )}
+          {periodo.mejorSemana && (
+            <div style={{ marginTop: 12, paddingBottom: 4 }}>
+              <div style={{ fontSize: T.micro, color: S.mute, fontWeight: 600 }}>La mejor semana</div>
+              <div style={{ fontSize: T.body, color: S.ink, marginTop: 2 }}>
+                La del {fechaLarga(periodo.mejorSemana.lunes)}: <b className="num">{periodo.mejorSemana.series}</b> series
+              </div>
+            </div>
+          )}
+        </section>
+      )}
 
       {resumen.series === 0 ? (
         <div className="flex items-center justify-center" style={{ padding: '40px 0' }}>
@@ -179,6 +319,26 @@ function SeriesTab({ nowTs }: { nowTs: number }) {
           </div>
         </>
       )}
+
+      {/* Informes: el año y los ciclos del plan */}
+      {entrenosDelAnio && (
+        <button
+          onClick={() => abrirInforme({ tipo: 'anio', year: hoy.getFullYear() })}
+          aria-label={`Tu ${hoy.getFullYear()} en el gym`}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 10, width: '100%', minHeight: 56, padding: '10px 14px', textAlign: 'left', cursor: 'pointer',
+            borderRadius: R.lg, border: `1px solid ${S.line2}`, color: S.ink,
+            background: `radial-gradient(120% 120% at 0% 0%, rgba(232,99,74,0.16), transparent 70%), ${S.surf}`,
+          }}
+        >
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: 'block', fontSize: T.bodyLg, fontWeight: 700 }}>Tu <span className="num">{hoy.getFullYear()}</span></span>
+            <span style={{ display: 'block', fontSize: T.caption, color: S.dim, marginTop: 1 }}>Tu año en el gym, en tarjetas</span>
+          </span>
+          <span aria-hidden="true" style={{ color: S.mute, fontSize: T.title }}>›</span>
+        </button>
+      )}
+      <BloqueCiclos nowTs={nowTs} />
 
       {historyId && <ExerciseHistorySheet exerciseId={historyId} onClose={() => setHistoryId(null)} />}
     </div>
@@ -387,7 +547,12 @@ export function ProgresoScreen() {
   const { workouts } = useStore()
   const exercises = useAllExercises()
   const [period, setPeriod] = useState<Period>('3m')
-  const [tab, setTab] = useState<Tab>('fuerza')
+  // "Ver" en la tarjeta del mes de Inicio abre Resumen en ese mes.
+  const progresoMes = useStore(s => s.progresoMes)
+  const limpiarProgresoMes = useStore(s => s.limpiarProgresoMes)
+  const [mesInicial] = useState(progresoMes)
+  const [tab, setTab] = useState<Tab>(progresoMes ? 'resumen' : 'fuerza')
+  useEffect(() => { if (progresoMes) limpiarProgresoMes() }, [progresoMes, limpiarProgresoMes])
   const [selectedMuscle, setSelectedMuscle] = useState<string | null>(null)
   const [historyExerciseId, setHistoryExerciseId] = useState<string | null>(null)
   const [abierta, setAbierta] = useState<string | null>(null)
@@ -427,7 +592,7 @@ export function ProgresoScreen() {
         <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: -0.5, color: S.ink }}>Progreso</div>
 
         <div style={{ display: 'flex', background: S.surf, borderRadius: 16, padding: 3, border: `1px solid ${S.line2}`, marginTop: 16 }}>
-          {([['fuerza', 'Marcas'], ['musculos', 'Músculos'], ['series', 'Series']] as [Tab, string][]).map(([t, label]) => (
+          {([['fuerza', 'Marcas'], ['musculos', 'Músculos'], ['resumen', 'Resumen']] as [Tab, string][]).map(([t, label]) => (
             <button key={t} onClick={() => setTab(t)}
               style={{ flex: 1, minHeight: 44, borderRadius: 12, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', background: tab === t ? S.surf2 : 'transparent', color: tab === t ? S.ink : S.dim, transition: 'all 0.15s ease-out' }}>
               {label}
@@ -435,7 +600,7 @@ export function ProgresoScreen() {
           ))}
         </div>
 
-        {tab !== 'series' && <div style={{ display: 'flex', background: S.surf, borderRadius: 16, padding: 3, border: `1px solid ${S.line2}`, marginTop: 8 }}>
+        {tab !== 'resumen' && <div style={{ display: 'flex', background: S.surf, borderRadius: 16, padding: 3, border: `1px solid ${S.line2}`, marginTop: 8 }}>
           {PERIODOS.map(([p, label]) => (
             <button key={p} onClick={() => setPeriod(p)}
               style={{ flex: 1, minHeight: 40, borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: period === p ? S.surf2 : 'transparent', color: period === p ? S.ink : S.dim, transition: 'all 0.15s ease-out' }}>
@@ -446,8 +611,8 @@ export function ProgresoScreen() {
       </div>
 
       <div className="flex-1 min-h-0 scroll-area" style={{ padding: '16px 22px 24px' }}>
-        {tab === 'series' ? (
-          <SeriesTab nowTs={nowTs} />
+        {tab === 'resumen' ? (
+          <ResumenTab nowTs={nowTs} inicial={mesInicial} />
         ) : tab === 'musculos' ? (
           <MusculosTab desde={desde} nowTs={nowTs} dias={dias} />
         ) : (

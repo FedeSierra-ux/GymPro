@@ -172,6 +172,9 @@ function normalizarDatos(inner: Record<string, unknown>): string {
     if (state[k] !== undefined && state[k] !== null && !esObjeto(state[k])) throw new Error(invalido)
   }
   if (state.inicioUso != null && !esNumero(state.inicioUso)) throw new Error(invalido)
+  // Qué tarjetas de Inicio ya se cerraron: si vienen mal, se olvidan (vuelven a aparecer) en vez de rechazar el backup.
+  if (state.resumenMesCerrado != null && typeof state.resumenMesCerrado !== 'string') delete state.resumenMesCerrado
+  if (state.wrappedCerrado != null && !esNumero(state.wrappedCerrado)) delete state.wrappedCerrado
   const ciclosOk = ((state.ciclosPrograma ?? []) as unknown[]).every((c) => esObjeto(c) && esNumero(c.inicio) && esNumero(c.fin))
   if (!ciclosOk) throw new Error(invalido)
   const workouts = (state.workouts ?? []) as unknown[]

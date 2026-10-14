@@ -9,6 +9,8 @@ import { prediccionDelPlan } from '../utils/planOrder'
 import { haceCuanto } from '../utils/relativeDate'
 import { ProgramCard } from '../components/ProgramCard'
 import { WeeklyReview } from '../components/WeeklyReview'
+import { ResumenMesCard } from '../components/ResumenMesCard'
+import { WrappedCard } from '../components/WrappedCard'
 import { WeeklyMuscleSets } from '../components/WeeklyMuscleSets'
 import { RoutineIcon } from '../components/RoutineIcon'
 
@@ -226,6 +228,9 @@ export function HomeScreen() {
           )}
         </div>
 
+        {/* Del 1/12 al 15/1: "Tu año en el gym" */}
+        <WrappedCard />
+
         {/* En qué semana del plan estás */}
         <ProgramCard />
 
@@ -268,6 +273,9 @@ export function HomeScreen() {
 
         {/* Desde el lunes, cómo fue la semana pasada */}
         <WeeklyReview />
+
+        {/* Del 1 al 7 de cada mes, cómo fue el mes pasado */}
+        <ResumenMesCard />
 
         {/* Última sesión: una línea que abre el entreno en la Agenda */}
         {lastWorkout && lastRoutine && (

@@ -13,6 +13,7 @@ import { ProfileScreen } from './screens/ProfileScreen'
 import { ActiveWorkoutScreen } from './screens/ActiveWorkoutScreen'
 import { OnboardingScreen } from './screens/OnboardingScreen'
 import { WorkoutSummaryModal } from './components/WorkoutSummaryModal'
+import { InformeHost } from './components/InformeHost'
 
 function App() {
   // Un entreno que quedó abierto más de 4 horas se cierra solo: al abrir la
@@ -87,6 +88,8 @@ function Pantalla() {
         {activeTab === 'perfil' && <ProfileScreen />}
       </div>
       <BottomNav />
+      {/* Informes a pantalla completa (ciclo, tu año): tapan las pestañas. */}
+      <InformeHost />
       <ToastContainer />
     </div>
   )

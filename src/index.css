@@ -239,6 +239,13 @@ h1, h2, h3, h4, h5, h6, p { margin: 0; padding: 0; }
 }
 .destello-verde { animation: destello-verde 0.9s ease-out; }
 
+/* Tarjetas de "Tu año en el gym": cada una entra subiendo un poco. */
+.tarjeta-entra { animation: tarjeta-entra 0.35s ease-out; }
+@keyframes tarjeta-entra {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

@@ -19,15 +19,15 @@ export interface DatosImagen {
   ejercicios: { nombre: string; detalle: string }[]
 }
 
-const W = 1080
-const H = 1920
-const BG = '#0C0E14'
-const SURF = '#161821'
-const INK = '#ECEEF4'
-const DIM = '#8A91A3'
-const AMBER = '#F2A93B'
-const SANS = '"DM Sans", system-ui, sans-serif'
-const MONO = '"JetBrains Mono", ui-monospace, monospace'
+export const W = 1080
+export const H = 1920
+export const BG = '#0C0E14'
+export const SURF = '#161821'
+export const INK = '#ECEEF4'
+export const DIM = '#8A91A3'
+export const AMBER = '#F2A93B'
+export const SANS = '"DM Sans", system-ui, sans-serif'
+export const MONO = '"JetBrains Mono", ui-monospace, monospace'
 
 function figura(ctx: CanvasRenderingContext2D, lado: 'frente' | 'espalda', niveles: DatosImagen['niveles'], x: number, y: number, alto: number, color: string) {
   const { vb, partes } = figuraPorNiveles(lado, niveles, sexoDeNiveles(niveles))
@@ -45,14 +45,15 @@ function figura(ctx: CanvasRenderingContext2D, lado: 'frente' | 'espalda', nivel
 }
 
 /** Corta el texto con "…" para que entre en `ancho`. */
-function ajustar(ctx: CanvasRenderingContext2D, texto: string, ancho: number): string {
+export function ajustar(ctx: CanvasRenderingContext2D, texto: string, ancho: number): string {
   if (ctx.measureText(texto).width <= ancho) return texto
   let t = texto
   while (t.length > 1 && ctx.measureText(t + '…').width > ancho) t = t.slice(0, -1)
   return t + '…'
 }
 
-export async function generarImagenEntreno(d: DatosImagen): Promise<Blob> {
+/** Un lienzo de historia (1080 × 1920) con las fuentes de la app ya cargadas. */
+export async function lienzoHistoria(): Promise<{ canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D }> {
   // Las fuentes de la app tienen que estar cargadas o el canvas usa las del sistema.
   try { await document.fonts?.ready } catch { /* sigue con lo que haya */ }
   const canvas = document.createElement('canvas')
@@ -60,6 +61,34 @@ export async function generarImagenEntreno(d: DatosImagen): Promise<Blob> {
   canvas.height = H
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('No se pudo armar la imagen')
+  return { canvas, ctx }
+}
+
+export function aPng(canvas: HTMLCanvasElement): Promise<Blob> {
+  return new Promise((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('No se pudo armar la imagen'))), 'image/png'),
+  )
+}
+
+/** Parte el texto en renglones que entran en `ancho`. */
+export function renglones(ctx: CanvasRenderingContext2D, texto: string, ancho: number): string[] {
+  const out: string[] = []
+  let linea = ''
+  for (const palabra of texto.split(/\s+/)) {
+    const prueba = linea ? `${linea} ${palabra}` : palabra
+    if (linea && ctx.measureText(prueba).width > ancho) {
+      out.push(linea)
+      linea = palabra
+    } else {
+      linea = prueba
+    }
+  }
+  if (linea) out.push(linea)
+  return out
+}
+
+export async function generarImagenEntreno(d: DatosImagen): Promise<Blob> {
+  const { canvas, ctx } = await lienzoHistoria()
 
   ctx.fillStyle = BG
   ctx.fillRect(0, 0, W, H)
@@ -125,9 +154,7 @@ export async function generarImagenEntreno(d: DatosImagen): Promise<Blob> {
   ctx.font = `700 30px ${SANS}`
   ctx.fillText('GymPro', M, H - 80)
 
-  return new Promise((resolve, reject) =>
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('No se pudo armar la imagen'))), 'image/png'),
-  )
+  return aPng(canvas)
 }
 
 export type ResultadoCompartir = 'compartido' | 'descargado' | 'cancelado'
