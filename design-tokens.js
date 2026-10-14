@@ -31,6 +31,46 @@ export const colors = {
 }
 
 /**
+ * Colores de las rutinas: ninguno es un color de estado (coral = acción,
+ * ámbar = récord, verde = hecho, rojo = error), así una rutina no se confunde
+ * con un aviso. Son 8 para que la séptima no repita la primera.
+ */
+export const routinePalette = [
+  '#38BDF8', // celeste
+  '#A78BFA', // violeta
+  '#F472B6', // rosa
+  '#2DD4BF', // turquesa
+  '#FB923C', // naranja
+  '#818CF8', // índigo
+  '#E879F9', // fucsia
+  '#94A3B8', // gris azulado
+]
+
+/**
+ * Un color por grupo muscular, separados unos 30° en el círculo cromático:
+ * bíceps y glúteos (y espalda y cardio) ya no se confunden.
+ */
+export const muscleColors = {
+  pecho: '#F87171',
+  hombros: '#FB923C',
+  core: '#FACC15',
+  piernas: '#4ADE80',
+  gluteos: '#2DD4BF',
+  espalda: '#38BDF8',
+  biceps: '#818CF8',
+  triceps: '#C084FC',
+  cardio: '#94A3B8',
+}
+
+/** Radios: chico (chips, inputs chicos), medio (botones), grande (tarjetas), hoja (modales y hojas). */
+export const radius = {
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 24,
+}
+
+/**
  * Escala tipográfica. El piso es 11px: más chico que eso no se lee en el
  * gimnasio, con el teléfono a un brazo de distancia y luz de tubo.
  */

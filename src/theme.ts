@@ -1,4 +1,4 @@
-import { colors, text, TAP_MIN } from '../design-tokens.js'
+import { colors, text, radius, TAP_MIN } from '../design-tokens.js'
 
 /**
  * Los tokens de diseño para las pantallas que estilan en línea.
@@ -11,6 +11,9 @@ export const S: Record<keyof typeof colors, string> = colors
 
 /** Escala tipográfica con piso de 11px. Ver design-tokens.js. */
 export const T: Record<keyof typeof text, number> = text
+
+/** Radios: sm 8 (chips), md 12 (botones), lg 16 (tarjetas), xl 24 (hojas y modales). */
+export const R: Record<keyof typeof radius, number> = radius
 
 export { TAP_MIN }
 

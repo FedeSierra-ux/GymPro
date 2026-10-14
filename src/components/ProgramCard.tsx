@@ -34,7 +34,7 @@ export function ProgramCard() {
           aria-pressed={semana === n}
           className="num"
           style={{
-            minHeight: 40, borderRadius: 10, cursor: 'pointer', fontSize: 14, fontWeight: 700,
+            minHeight: 40, borderRadius: 12, cursor: 'pointer', fontSize: 15, fontWeight: 700,
             background: semana === n ? 'rgba(232,99,74,0.15)' : 'var(--surf2)',
             border: `1px solid ${semana === n ? 'rgba(232,99,74,0.4)' : 'var(--line2)'}`,
             color: semana === n ? 'var(--acc)' : 'var(--ink)',
@@ -46,7 +46,7 @@ export function ProgramCard() {
     </div>
   )
 
-  const caja = { background: 'var(--surf)', borderRadius: 14, border: '1px solid var(--line2)', padding: '12px 14px' } as const
+  const caja = { background: 'var(--surf)', borderRadius: 12, border: '1px solid var(--line2)', padding: '12px 14px' } as const
   const titulo = { fontSize: 13, fontWeight: 700, color: 'var(--ink)' } as const
 
   if (semana == null) {
@@ -72,13 +72,13 @@ export function ProgramCard() {
           <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
             <button
               onClick={() => fijarSemanaPrograma(1)}
-              style={{ flex: 1, minHeight: 44, borderRadius: 12, border: 'none', background: 'var(--acc)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
+              style={{ flex: 1, minHeight: 44, borderRadius: 12, border: 'none', background: 'var(--acc)', color: 'var(--on-acc)', fontWeight: 700, fontSize: 15, cursor: 'pointer' }}
             >
               Arrancar de nuevo
             </button>
             <button
               onClick={terminarPrograma}
-              style={{ flex: 1, minHeight: 44, borderRadius: 12, border: '1px solid var(--line2)', background: 'var(--surf2)', color: 'var(--ink)', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
+              style={{ flex: 1, minHeight: 44, borderRadius: 12, border: '1px solid var(--line2)', background: 'var(--surf2)', color: 'var(--ink)', fontWeight: 600, fontSize: 15, cursor: 'pointer' }}
             >
               Terminar el plan
             </button>
@@ -100,12 +100,12 @@ export function ProgramCard() {
           onClick={() => setEligiendo((v) => !v)}
           aria-expanded={eligiendo}
           aria-label={`Semana ${semana} de ${SEMANAS_PROGRAMA}. Tocá para corregir la semana`}
-          style={{ display: 'block', width: '100%', background: 'none', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer', color: 'inherit', fontFamily: 'inherit' }}
+          style={{ display: 'block', width: '100%', background: 'none', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer', color: 'inherit' }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
             <span style={titulo}>Tu plan</span>
             <span style={{ fontSize: 12, color: 'var(--dim)' }}>
-              {arrancaManana && 'Desde mañana · '}Semana <b className="num" style={{ color: 'var(--ink)', fontSize: 14 }}>{semana}</b> de <span className="num">{SEMANAS_PROGRAMA}</span>
+              {arrancaManana && 'Desde mañana · '}Semana <b className="num" style={{ color: 'var(--ink)', fontSize: 13 }}>{semana}</b> de <span className="num">{SEMANAS_PROGRAMA}</span>
             </span>
           </div>
           <div aria-hidden="true" style={{ display: 'grid', gridTemplateColumns: `repeat(${SEMANAS_PROGRAMA}, 1fr)`, gap: 4, marginTop: 8 }}>

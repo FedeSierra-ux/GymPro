@@ -67,8 +67,7 @@ export function ExercisePickerSheet({
           aria-label="Buscar un ejercicio"
           style={{
             flexShrink: 0, width: '100%', background: S.surf2, border: `1px solid ${S.line2}`,
-            borderRadius: 12, padding: '12px 14px', fontSize: 16, color: S.ink,
-            fontFamily: 'DM Sans, system-ui, sans-serif', outline: 'none',
+            borderRadius: 12, padding: '12px 14px', fontSize: 15, color: S.ink, outline: 'none',
           }}
         />
 
@@ -92,7 +91,7 @@ export function ExercisePickerSheet({
 
         <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2" style={{ paddingBottom: 12 }}>
           {lista.length === 0 && (
-            <p style={{ color: S.faint, fontSize: 13, textAlign: 'center', padding: '32px 0' }}>
+            <p style={{ color: S.mute, fontSize: 13, textAlign: 'center', padding: '32px 0' }}>
               Ningún ejercicio coincide con «{busqueda}»
             </p>
           )}
@@ -105,7 +104,7 @@ export function ExercisePickerSheet({
                 style={{
                   display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left',
                   background: S.surf2, border: `1px solid ${S.line2}`, borderRadius: 12,
-                  padding: 10, minHeight: 60, cursor: 'pointer', fontFamily: 'inherit',
+                  padding: 10, minHeight: 60, cursor: 'pointer',
                 }}
               >
                 <ExerciseThumbnail exercise={ex} size={38} />
@@ -129,7 +128,7 @@ export function ExercisePickerSheet({
 function chipStyle(activo: boolean, color: string): React.CSSProperties {
   return {
     padding: '8px 14px', borderRadius: 20, flexShrink: 0, minHeight: 40, whiteSpace: 'nowrap',
-    fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans, system-ui, sans-serif',
+    fontSize: 12, fontWeight: 600, cursor: 'pointer',
     background: activo ? color + '33' : S.surf2,
     border: `1px solid ${activo ? color : S.line2}`,
     color: activo ? color : S.dim,

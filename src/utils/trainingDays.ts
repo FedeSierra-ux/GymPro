@@ -1,3 +1,4 @@
+import { routinePalette } from '../../design-tokens.js'
 import type { Routine, Workout } from '../types'
 
 /** Clave YYYY-MM-DD en hora local (no UTC: si no, los entrenos de la noche caen al día siguiente). */
@@ -41,14 +42,8 @@ export function routineByDay(workouts: Workout[]): Map<string, string> {
  * responde la pregunta que uno de verdad le hace a un calendario de entrenos:
  * ¿estoy alternando bien?
  */
-export const ROUTINE_COLORS = [
-  '#E8634A', // coral — el acento de la app
-  '#38BDF8', // celeste
-  '#A78BFA', // violeta
-  '#34D399', // verde
-  '#F2A93B', // ámbar
-  '#F472B6', // rosa
-]
+/** Ver design-tokens.js: sin colores de estado, para que una rutina no parezca un aviso. */
+export const ROUTINE_COLORS = routinePalette
 
 /**
  * Color de una rutina: el que quedó guardado al crearla. Antes salía de la

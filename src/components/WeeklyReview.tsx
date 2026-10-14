@@ -35,26 +35,26 @@ export function WeeklyReview() {
     <div style={{ padding: '12px 22px 0' }}>
       <section
         aria-label="Repaso de la semana pasada"
-        style={{ background: 'var(--surf)', borderRadius: 14, border: '1px solid var(--line2)', padding: '10px 6px 12px 14px' }}
+        style={{ background: 'var(--surf)', borderRadius: 16, border: '1px solid var(--line2)', padding: '10px 6px 12px 14px' }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>Semana pasada</span>
           <button
             onClick={() => cerrarRepaso(clave)}
             aria-label="Cerrar el repaso hasta el lunes que viene"
-            style={{ width: 36, height: 36, background: 'none', border: 'none', color: 'var(--dim)', fontSize: 16, cursor: 'pointer' }}
+            style={{ width: 36, height: 36, background: 'none', border: 'none', color: 'var(--dim)', fontSize: 15, cursor: 'pointer' }}
           >
             ✕
           </button>
         </div>
         <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 12, color: 'var(--dim)', paddingRight: 8 }}>
           <span>
-            <b className="num" style={{ color: 'var(--ink)', fontSize: 16 }}>{planificados > 0 ? diasEntrenados : semana.length}</b>
+            <b className="num" style={{ color: 'var(--ink)', fontSize: 15 }}>{planificados > 0 ? diasEntrenados : semana.length}</b>
             {planificados > 0 ? <> de <span className="num">{planificados}</span> días</> : semana.length === 1 ? ' entreno' : ' entrenos'}
           </span>
-          <span><b className="num" style={{ color: 'var(--ink)', fontSize: 16 }}>{series}</b> series</span>
+          <span><b className="num" style={{ color: 'var(--ink)', fontSize: 15 }}>{series}</b> series</span>
           <span>
-            <b className="num" style={{ color: records ? 'var(--acc2)' : 'var(--ink)', fontSize: 16 }}>{records}</b>
+            <b className="num" style={{ color: records ? 'var(--acc2)' : 'var(--ink)', fontSize: 15 }}>{records}</b>
             {records === 1 ? ' récord' : ' récords'}
           </span>
         </div>

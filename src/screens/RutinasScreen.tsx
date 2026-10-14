@@ -10,6 +10,7 @@ import { RoutineBadge, RoutineIcon } from '../components/RoutineIcon'
 import { routineColor } from '../utils/trainingDays'
 import { haceCuanto } from '../utils/relativeDate'
 import { rutinaEnUso, tieneVariante, VARIANTE_LABEL } from '../utils/routineVariant'
+import { S } from '../theme'
 
 /**
  * Detecta el "mantener apretado" sobre una tarjeta. Se usa pointer events para
@@ -94,8 +95,8 @@ export function RutinasScreen() {
 
       {/* Header */}
       <div style={{ paddingTop: 'max(60px, calc(env(safe-area-inset-top, 0px) + 22px))', paddingLeft: 22, paddingRight: 22 }}>
-        <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: -0.5, color: '#ECEEF4' }}>Mis Rutinas</div>
-        <div style={{ fontSize: 13, color: '#8A91A3', marginTop: 4 }}>
+        <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: -0.5, color: S.ink }}>Mis Rutinas</div>
+        <div style={{ fontSize: 13, color: S.dim, marginTop: 4 }}>
           {routines.length} rutinas guardadas · mantené apretada una para más opciones
         </div>
       </div>
@@ -117,23 +118,22 @@ export function RutinasScreen() {
               onLongPress={() => setMenuRoutine(routine)}
             >
               <div style={{
-                background: '#161821', borderRadius: 18, padding: 16, textAlign: 'left', width: '100%',
+                background: S.surf, borderRadius: 16, padding: 16, textAlign: 'left', width: '100%',
                 border: '1px solid rgba(236,238,244,0.12)',
                 borderLeft: `3px solid ${color}`,
                 transition: 'all 0.15s',
-                fontFamily: 'DM Sans, system-ui, sans-serif',
               }}>
               <div className="flex items-start gap-3">
                 <RoutineIcon routine={routine} size={19} boxed />
                 <div className="flex-1 min-w-0">
-                  <div style={{ fontSize: 16, fontWeight: 700, color: '#ECEEF4' }}>{routine.name}</div>
-                  <div style={{ fontSize: 12, color: '#8A91A3', marginTop: 3 }}>
+                  <div style={{ fontSize: 17, fontWeight: 700, color: S.ink }}>{routine.name}</div>
+                  <div style={{ fontSize: 12, color: S.dim, marginTop: 3 }}>
                     {routine.exercises.length} ejercicios · ~{duration} min
                     {ultimaVez.has(routine.id) && <> · {haceCuanto(ultimaVez.get(routine.id)!, nowTs)}</>}
                     {routine.variante === 'alt' && tieneVariante(routine) && <> · {VARIANTE_LABEL.alt}</>}
                   </div>
                 </div>
-                <div style={{ color: '#3B3F4E', fontSize: 20, alignSelf: 'center', lineHeight: 1 }}>›</div>
+                <div style={{ color: S.mute, fontSize: 22, alignSelf: 'center', lineHeight: 1 }}>›</div>
               </div>
 
               {muscleGroups.length > 0 && (
@@ -143,7 +143,7 @@ export function RutinasScreen() {
                     return (
                       <span key={mg} style={{
                         fontSize: 11, fontWeight: 600, color: cfg.color,
-                        background: cfg.color + '22', padding: '4px 10px', borderRadius: 20,
+                        background: cfg.color + '22', padding: '4px 10px', borderRadius: 24,
                         display: 'inline-flex', alignItems: 'center', gap: 4,
                       }}>
                         <MuscleIcon group={mg} size={20} /> {cfg.label}
@@ -154,7 +154,7 @@ export function RutinasScreen() {
                     <span
                       title={muscleGroups.slice(CHIPS_VISIBLES).map((g) => muscleGroupConfig[g].label).join(', ')}
                       aria-label={`y ${ocultos} más: ${muscleGroups.slice(CHIPS_VISIBLES).map((g) => muscleGroupConfig[g].label).join(', ')}`}
-                      style={{ fontSize: 11, fontWeight: 600, color: '#8A91A3', background: '#1C1F2A', padding: '4px 10px', borderRadius: 20, display: 'inline-flex', alignItems: 'center' }}
+                      style={{ fontSize: 11, fontWeight: 600, color: S.dim, background: S.surf2, padding: '4px 10px', borderRadius: 24, display: 'inline-flex', alignItems: 'center' }}
                     >
                       +{ocultos}
                     </span>
@@ -172,15 +172,14 @@ export function RutinasScreen() {
         <button
           onClick={handleCreateRoutine}
           style={{
-            width: '100%', border: '1px solid rgba(232,99,74,0.25)', borderRadius: 18,
-            background: 'rgba(232,99,74,0.07)', color: '#E8634A',
-            fontFamily: 'DM Sans, system-ui, sans-serif',
-            fontSize: 14, fontWeight: 700, padding: '16px 0', cursor: 'pointer',
+            width: '100%', border: '1px solid rgba(232,99,74,0.25)', borderRadius: 16,
+            background: 'rgba(232,99,74,0.07)', color: S.acc,
+            fontSize: 15, fontWeight: 700, padding: '16px 0', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
             transition: 'all 0.15s',
           }}
         >
-          <span style={{ fontSize: 18, lineHeight: 1, fontWeight: 700 }}>+</span> Crear nueva rutina
+          <span style={{ fontSize: 17, lineHeight: 1, fontWeight: 700 }}>+</span> Crear nueva rutina
         </button>
       </div>
 
@@ -189,21 +188,20 @@ export function RutinasScreen() {
         <button
           onClick={() => setShowCustomExercises(true)}
           style={{
-            width: '100%', borderRadius: 18, padding: '14px 0',
+            width: '100%', borderRadius: 16, padding: '14px 0',
             border: '1px solid rgba(236,238,244,0.12)',
-            background: '#161821',
-            color: '#8A91A3',
-            fontFamily: 'DM Sans, system-ui, sans-serif',
-            fontSize: 14, fontWeight: 600, cursor: 'pointer',
+            background: S.surf,
+            color: S.dim,
+            fontSize: 15, fontWeight: 600, cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
             transition: 'all 0.15s',
           }}
         >
-          <span style={{ fontSize: 16, lineHeight: 1 }}>💪</span> Mis ejercicios
+          <span style={{ fontSize: 15, lineHeight: 1 }}>💪</span> Mis ejercicios
           {customExercises.some(e => !e.archived) && (
             <span style={{
-              fontSize: 11, padding: '2px 6px', borderRadius: 20, fontWeight: 700,
-              background: 'rgba(236,238,244,0.08)', color: '#ECEEF4',
+              fontSize: 11, padding: '2px 6px', borderRadius: 24, fontWeight: 700,
+              background: 'rgba(236,238,244,0.08)', color: S.ink,
             }}>
               {customExercises.filter(e => !e.archived).length}
             </span>
@@ -217,24 +215,23 @@ export function RutinasScreen() {
           onClick={() => setMenuRoutine(null)}>
           <div
             className="w-full rounded-t-3xl px-4 pt-4 pb-8 sheet-enter"
-            style={{ background: '#161821', borderTop: '1px solid rgba(236,238,244,0.12)' }}
+            style={{ background: S.surf, borderTop: '1px solid rgba(236,238,244,0.12)' }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ width: 40, height: 4, background: '#1C1F2A', borderRadius: 2, margin: '0 auto 16px' }} />
-            <p style={{ fontSize: 16, fontWeight: 700, color: '#ECEEF4', marginBottom: 2 }}>
+            <div style={{ width: 40, height: 4, background: S.surf2, borderRadius: 2, margin: '0 auto 16px' }} />
+            <p style={{ fontSize: 17, fontWeight: 700, color: S.ink, marginBottom: 2 }}>
               <RoutineBadge routineId={menuRoutine.id} size={16} />{menuRoutine.name}
             </p>
-            <p style={{ fontSize: 12, color: '#8A91A3', marginBottom: 16 }}>
+            <p style={{ fontSize: 12, color: S.dim, marginBottom: 16 }}>
               {menuRoutine.exercises.length} ejercicios
             </p>
             <div className="flex flex-col gap-2">
               <button
                 onClick={() => { const r = menuRoutine; setMenuRoutine(null); setActiveRoutineId(r.id) }}
                 style={{
-                  width: '100%', textAlign: 'left', padding: '14px 16px', borderRadius: 14,
-                  background: '#1C1F2A', border: '1px solid rgba(236,238,244,0.12)',
-                  color: '#ECEEF4', fontSize: 14, fontWeight: 600, cursor: 'pointer',
-                  fontFamily: 'DM Sans, system-ui, sans-serif',
+                  width: '100%', textAlign: 'left', padding: '14px 16px', borderRadius: 12,
+                  background: S.surf2, border: '1px solid rgba(236,238,244,0.12)',
+                  color: S.ink, fontSize: 15, fontWeight: 600, cursor: 'pointer',
                 }}
               >
                 ✏️  Editar rutina
@@ -242,10 +239,9 @@ export function RutinasScreen() {
               <button
                 onClick={() => { const r = menuRoutine; setMenuRoutine(null); setConfirmDelete(r) }}
                 style={{
-                  width: '100%', textAlign: 'left', padding: '14px 16px', borderRadius: 14,
+                  width: '100%', textAlign: 'left', padding: '14px 16px', borderRadius: 12,
                   background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.28)',
-                  color: '#f87171', fontSize: 14, fontWeight: 600, cursor: 'pointer',
-                  fontFamily: 'DM Sans, system-ui, sans-serif',
+                  color: S.bad, fontSize: 15, fontWeight: 600, cursor: 'pointer',
                 }}
               >
                 🗑  Eliminar rutina
@@ -253,10 +249,9 @@ export function RutinasScreen() {
               <button
                 onClick={() => setMenuRoutine(null)}
                 style={{
-                  width: '100%', padding: '14px 16px', borderRadius: 14, marginTop: 4,
+                  width: '100%', padding: '14px 16px', borderRadius: 12, marginTop: 4,
                   background: 'none', border: '1px solid rgba(236,238,244,0.12)',
-                  color: '#8A91A3', fontSize: 14, fontWeight: 600, cursor: 'pointer',
-                  fontFamily: 'DM Sans, system-ui, sans-serif',
+                  color: S.dim, fontSize: 15, fontWeight: 600, cursor: 'pointer',
                 }}
               >
                 Cancelar
@@ -269,15 +264,15 @@ export function RutinasScreen() {
       {/* Confirmación de borrado */}
       {confirmDelete && (
         <div className="fixed inset-0 flex items-center justify-center z-50 px-6" style={{ background: 'rgba(0,0,0,0.8)' }}>
-          <div style={{ background: '#161821', border: '1px solid rgba(236,238,244,0.12)', borderRadius: 20, padding: 24, width: '100%', maxWidth: 340 }}>
-            <h3 style={{ color: '#ECEEF4', fontWeight: 700, fontSize: 17, marginBottom: 8 }}>¿Eliminar la rutina?</h3>
-            <p style={{ color: '#8A91A3', fontSize: 13, marginBottom: 20 }}>
-              Se borra <strong style={{ color: '#ECEEF4' }}>{confirmDelete.name}</strong>. Los entrenos que ya hiciste
+          <div style={{ background: S.surf, border: '1px solid rgba(236,238,244,0.12)', borderRadius: 24, padding: 24, width: '100%', maxWidth: 340 }}>
+            <h3 style={{ color: S.ink, fontWeight: 700, fontSize: 17, marginBottom: 8 }}>¿Eliminar la rutina?</h3>
+            <p style={{ color: S.dim, fontSize: 13, marginBottom: 20 }}>
+              Se borra <strong style={{ color: S.ink }}>{confirmDelete.name}</strong>. Los entrenos que ya hiciste
               con ella quedan en el historial.
             </p>
             <div className="flex gap-3">
               <button onClick={() => setConfirmDelete(null)}
-                style={{ flex: 1, padding: '12px 0', borderRadius: 14, border: '1px solid rgba(236,238,244,0.12)', color: '#8A91A3', fontSize: 14, fontWeight: 600, background: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+                style={{ flex: 1, padding: '12px 0', borderRadius: 12, border: '1px solid rgba(236,238,244,0.12)', color: S.dim, fontSize: 15, fontWeight: 600, background: 'none', cursor: 'pointer' }}>
                 Cancelar
               </button>
               <button
@@ -286,7 +281,7 @@ export function RutinasScreen() {
                   addToast(`Se eliminó ${confirmDelete.name}`, 'info')
                   setConfirmDelete(null)
                 }}
-                style={{ flex: 1, padding: '12px 0', borderRadius: 14, border: 'none', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', background: 'rgba(239,68,68,0.15)', color: '#f87171' }}>
+                style={{ flex: 1, padding: '12px 0', borderRadius: 12, border: 'none', fontWeight: 700, fontSize: 15, cursor: 'pointer', background: 'rgba(248,113,113,0.15)', color: S.bad }}>
                 Eliminar
               </button>
             </div>

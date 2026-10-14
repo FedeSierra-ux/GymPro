@@ -35,7 +35,7 @@ export function UpdatePrompt() {
           pointerEvents: 'auto',
         }}
       >
-        <span style={{ fontSize: 20 }} aria-hidden="true">✨</span>
+        <span style={{ fontSize: 22 }} aria-hidden="true">✨</span>
         <div className="flex-1 min-w-0">
           <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>Nueva versión disponible</p>
           <p style={{ fontSize: 11, color: 'var(--dim)', marginTop: 1 }}>Actualizá para tener las últimas mejoras</p>
@@ -53,8 +53,8 @@ export function UpdatePrompt() {
         <button
           onClick={() => updateServiceWorker(true)}
           style={{
-            fontSize: 12, fontWeight: 700, color: '#fff', background: 'var(--acc)',
-            border: 'none', borderRadius: 10, padding: '8px 14px', cursor: 'pointer', flexShrink: 0,
+            fontSize: 12, fontWeight: 700, color: 'var(--on-acc)', background: 'var(--acc)',
+            border: 'none', borderRadius: 12, padding: '8px 14px', cursor: 'pointer', flexShrink: 0,
           }}
         >
           Actualizar

@@ -92,7 +92,7 @@ function SeriesTab({ nowTs }: { nowTs: number }) {
 
   const flecha = (habilitada: boolean) => ({
     width: 44, height: 44, borderRadius: 12, border: `1px solid ${S.line2}`, background: S.surf2,
-    color: habilitada ? S.ink : S.faint, fontSize: 18, cursor: habilitada ? 'pointer' : 'default',
+    color: habilitada ? S.ink : S.faint, fontSize: 17, cursor: habilitada ? 'pointer' : 'default',
     opacity: habilitada ? 1 : 0.4,
   })
 
@@ -100,12 +100,12 @@ function SeriesTab({ nowTs }: { nowTs: number }) {
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <button aria-label="Mes anterior" disabled={esPrimerMes} onClick={() => mover(-1)} style={flecha(!esPrimerMes)}>‹</button>
-        <div style={{ fontSize: 16, fontWeight: 700, color: S.ink }}>{MESES[cursor.mes]} {cursor.anio}</div>
+        <div style={{ fontSize: 17, fontWeight: 700, color: S.ink }}>{MESES[cursor.mes]} {cursor.anio}</div>
         <button aria-label="Mes siguiente" disabled={esMesActual} onClick={() => mover(1)} style={flecha(!esMesActual)}>›</button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-        <div style={{ background: S.surf2, borderRadius: 14, padding: '14px 12px', border: `1px solid ${S.line2}` }}>
+        <div style={{ background: S.surf2, borderRadius: 16, padding: '14px 12px', border: `1px solid ${S.line2}` }}>
           <div className="num" style={{ fontSize: 22, fontWeight: 700, color: S.ink }}>{resumen.series}</div>
           <div style={{ fontSize: 11, color: S.dim, marginTop: 3 }}>
             Series del mes
@@ -114,7 +114,7 @@ function SeriesTab({ nowTs }: { nowTs: number }) {
             )}
           </div>
         </div>
-        <div style={{ background: S.surf2, borderRadius: 14, padding: '14px 12px', border: `1px solid ${S.line2}` }}>
+        <div style={{ background: S.surf2, borderRadius: 16, padding: '14px 12px', border: `1px solid ${S.line2}` }}>
           <div className="num" style={{ fontSize: 22, fontWeight: 700, color: S.ink }}>{resumen.sesiones}</div>
           <div style={{ fontSize: 11, color: S.dim, marginTop: 3 }}>{resumen.sesiones === 1 ? 'Entreno' : 'Entrenos'}</div>
         </div>
@@ -122,11 +122,11 @@ function SeriesTab({ nowTs }: { nowTs: number }) {
 
       {resumen.series === 0 ? (
         <div className="flex items-center justify-center" style={{ padding: '40px 0' }}>
-          <p style={{ color: S.faint, fontSize: 13 }}>Sin series registradas en {MESES[cursor.mes].toLowerCase()}</p>
+          <p style={{ color: S.mute, fontSize: 13 }}>Sin series registradas en {MESES[cursor.mes].toLowerCase()}</p>
         </div>
       ) : (
         <>
-          <div style={{ background: S.surf, borderRadius: 18, padding: 16, border: `1px solid ${S.line2}` }}>
+          <div style={{ background: S.surf, borderRadius: 16, padding: 16, border: `1px solid ${S.line2}` }}>
             <h3 style={{ fontWeight: 700, color: S.ink, fontSize: 13, marginBottom: 14 }}>Series por grupo muscular</h3>
             <div className="flex flex-col gap-2.5">
               {grupos.map(g => {
@@ -147,7 +147,7 @@ function SeriesTab({ nowTs }: { nowTs: number }) {
             </div>
           </div>
 
-          <div style={{ background: S.surf, borderRadius: 18, padding: '16px 16px 6px', border: `1px solid ${S.line2}` }}>
+          <div style={{ background: S.surf, borderRadius: 16, padding: '16px 16px 6px', border: `1px solid ${S.line2}` }}>
             <h3 style={{ fontWeight: 700, color: S.ink, fontSize: 13 }}>Por ejercicio</h3>
             <p style={{ fontSize: 11, color: S.dim, marginTop: 2, marginBottom: 8 }}>Series y peso máximo del mes</p>
             {ejercicios.map(e => {
@@ -158,16 +158,16 @@ function SeriesTab({ nowTs }: { nowTs: number }) {
               const dif = antes > 0 && e.maxKg > 0 ? Math.round((e.maxKg - antes) * 10) / 10 : 0
               return (
                 <button key={e.exerciseId} onClick={() => setHistoryId(e.exerciseId)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 0', background: 'none', border: 'none', borderTop: `1px solid ${S.line2}`, textAlign: 'left', cursor: 'pointer', fontFamily: 'DM Sans, system-ui, sans-serif' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 0', background: 'none', border: 'none', borderTop: `1px solid ${S.line2}`, textAlign: 'left', cursor: 'pointer' }}>
                   <span style={{ width: 4, alignSelf: 'stretch', borderRadius: 2, background: cfg?.color ?? S.dim, flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: S.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ex.nameEs}</div>
                     <div style={{ fontSize: 11, color: S.dim, marginTop: 1 }}>{e.sets} {e.sets === 1 ? 'serie' : 'series'}</div>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: S.ink }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: S.ink }}>
                       {e.maxKg > 0 ? `${formatKg(e.maxKg)} kg` : e.maxSeg > 0 ? formatDuration(e.maxSeg) : '—'}
-                      {e.maxKg > 0 && e.repsAlMax > 0 && <span style={{ fontSize: 11, color: S.faint, fontWeight: 500 }}> × {e.repsAlMax}</span>}
+                      {e.maxKg > 0 && e.repsAlMax > 0 && <span style={{ fontSize: 11, color: S.mute, fontWeight: 500 }}> × {e.repsAlMax}</span>}
                     </div>
                     {dif !== 0 && (
                       <div style={{ fontSize: 11, fontWeight: 700, color: dif > 0 ? S.good : S.bad }}>{dif > 0 ? '↑ +' : '↓ '}{formatKg(dif)} kg</div>
@@ -211,23 +211,23 @@ function MusculosTab({ desde, nowTs, dias }: { desde: number; nowTs: number; dia
 
   return (
     <div className="flex flex-col gap-3">
-      <div style={{ background: S.surf, borderRadius: 18, padding: '18px 16px 14px', border: `1px solid ${S.line2}` }}>
+      <div style={{ background: S.surf, borderRadius: 16, padding: '18px 16px 14px', border: `1px solid ${S.line2}` }}>
         <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <BodyFigure niveles={niveles} size={250} color={S.acc} base={0.14} />
+          <BodyFigure niveles={niveles} size={250} color={S.ink} base={0.14} />
         </div>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 110, fontSize: 11, color: S.faint, marginTop: 4 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 110, fontSize: 11, color: S.mute, marginTop: 4 }}>
           <span>Frente</span><span>Espalda</span>
         </div>
         {/* Escala: más intenso, más series */}
         <div aria-hidden="true" style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', marginTop: 12, fontSize: 11, color: S.dim }}>
           <span>menos</span>
-          <span style={{ width: 90, height: 6, borderRadius: 3, background: `linear-gradient(to right, color-mix(in srgb, ${S.acc} 12%, transparent), ${S.acc})` }} />
+          <span style={{ width: 90, height: 6, borderRadius: 3, background: `linear-gradient(to right, color-mix(in srgb, ${S.ink} 12%, transparent), ${S.ink})` }} />
           <span>más series</span>
         </div>
       </div>
 
-      <div style={{ background: S.surf, borderRadius: 18, padding: '6px 16px', border: `1px solid ${S.line2}` }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', columnGap: 16, padding: '8px 0 6px', fontSize: 11, color: S.faint, fontWeight: 600 }}>
+      <div style={{ background: S.surf, borderRadius: 16, padding: '6px 16px', border: `1px solid ${S.line2}` }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', columnGap: 16, padding: '8px 0 6px', fontSize: 11, color: S.mute, fontWeight: 600 }}>
           <span /> <span style={{ textAlign: 'right' }}>Series</span> <span style={{ textAlign: 'right', minWidth: 52 }}>Por semana</span>
         </div>
         {filas.map(({ g, n }) => (
@@ -240,7 +240,7 @@ function MusculosTab({ desde, nowTs, dias }: { desde: number; nowTs: number; dia
           </div>
         ))}
       </div>
-      <p style={{ fontSize: 11, color: S.faint, textAlign: 'center' }}>
+      <p style={{ fontSize: 11, color: S.mute, textAlign: 'center' }}>
         Para crecer se suelen recomendar entre 10 y 20 series por semana de cada grupo · {dias >= 3650 ? 'desde el primer entreno' : `últimos ${dias} días`}
       </p>
     </div>
@@ -253,8 +253,8 @@ function MusculosTab({ desde, nowTs, dias }: { desde: number; nowTs: number; dia
 function IconoPausa() {
   return (
     <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" style={{ display: 'inline-block', verticalAlign: '-1px' }}>
-      <rect x="2" y="1.5" width="3" height="9" rx="1" fill={S.acc2} />
-      <rect x="7" y="1.5" width="3" height="9" rx="1" fill={S.acc2} />
+      <rect x="2" y="1.5" width="3" height="9" rx="1" fill={S.mute} />
+      <rect x="7" y="1.5" width="3" height="9" rx="1" fill={S.mute} />
     </svg>
   )
 }
@@ -286,7 +286,7 @@ function FilaEjercicio({ serie, abierta, onToggle, onHistorial }: {
         style={{
           display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 48px 70px 50px', alignItems: 'center', gap: 8,
           width: '100%', minHeight: 52, padding: '8px 0', background: 'none', border: 'none', textAlign: 'left',
-          cursor: 'pointer', fontFamily: 'DM Sans, system-ui, sans-serif', color: 'inherit',
+          cursor: 'pointer', color: 'inherit',
         }}
       >
         <span style={{ minWidth: 0 }}>
@@ -298,20 +298,28 @@ function FilaEjercicio({ serie, abierta, onToggle, onHistorial }: {
           </span>
         </span>
         <span style={{ height: 22 }}>
-          {valores.length > 1 && <Sparkline values={valores} color={cfg.color} width={48} height={22} />}
+          {/* Un solo código de color por fila: la línea neutra y el punto con el color del cambio. */}
+          {valores.length > 1 && <Sparkline values={valores} color={S.dim} puntoColor={subió ? S.good : bajó ? S.bad : S.dim} width={48} height={22} />}
         </span>
-        <span className="num" style={{ fontSize: 14, fontWeight: 700, color: S.ink, textAlign: 'right', whiteSpace: 'nowrap' }}>
+        <span className="num" style={{ fontSize: 13, fontWeight: 700, color: S.ink, textAlign: 'right', whiteSpace: 'nowrap' }}>
           {formatValor(serie)}
         </span>
-        <span className="num" style={{ fontSize: 12, fontWeight: 700, textAlign: 'right', whiteSpace: 'nowrap', color: estancado ? S.acc2 : subió ? S.good : bajó ? S.bad : S.faint }}>
+        <span className="num" style={{ fontSize: 12, fontWeight: 700, textAlign: 'right', whiteSpace: 'nowrap', color: estancado ? S.mute : subió ? S.good : bajó ? S.bad : S.mute }}>
           {estancado ? <IconoPausa /> : deltaCorto(serie.kind, serie.change)}
         </span>
       </button>
       {abierta && (
         <div style={{ padding: '2px 0 12px' }}>
           {valores.length > 1 && (
-            <div style={{ height: 80, marginBottom: 8 }}>
-              <Sparkline values={valores} color={cfg.color} height={80} />
+            <div style={{ marginBottom: 10 }}>
+              <Sparkline
+                values={valores} color={cfg.color} height={80} width={300}
+                ejes={{
+                  formato: (v) => serie.kind === 'kg' ? `${formatKg(v)} kg` : serie.kind === 'tiempo' ? formatDuration(v) : `${v} reps`,
+                  desde: new Date(serie.points[0].date).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' }),
+                  hasta: new Date(serie.points[serie.points.length - 1].date).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' }),
+                }}
+              />
             </div>
           )}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
@@ -322,7 +330,7 @@ function FilaEjercicio({ serie, abierta, onToggle, onHistorial }: {
                 : serie.change !== 0 ? <>{subió ? 'Subió' : 'Bajó'} <span className="num">{formatDelta(serie.kind, serie.change)}</span></> : 'Sin cambios'}
             </span>
             <button onClick={onHistorial}
-              style={{ minHeight: 36, padding: '0 12px', borderRadius: 10, background: S.surf2, border: `1px solid ${S.line2}`, color: S.ink, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
+              style={{ minHeight: 36, padding: '0 12px', borderRadius: 12, background: S.surf2, border: `1px solid ${S.line2}`, color: S.ink, fontSize: 12, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
               Historial
             </button>
           </div>
@@ -343,8 +351,8 @@ function AvisoEstancados({ series }: { series: ExerciseSeries[] }) {
   const nombre = ejemplo ? exercises.find(e => e.id === ejemplo.exerciseId)?.nameEs : undefined
   const descarga = ejemplo ? Math.round((ejemplo.current * 0.9) / 2.5) * 2.5 : 0
   return (
-    <div role="note" style={{ background: 'rgba(242,169,59,0.08)', border: '1px solid rgba(242,169,59,0.28)', borderRadius: 14, padding: '12px 14px', marginBottom: 16 }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: S.acc2 }}>
+    <div role="note" style={{ background: S.surf2, border: `1px solid ${S.line2}`, borderRadius: 16, padding: '12px 14px', marginBottom: 16 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: S.ink }}>
         <IconoPausa /> <span className="num">{series.length}</span> {series.length === 1 ? 'ejercicio sin mejorar' : 'ejercicios sin mejorar'}
       </div>
       <p style={{ fontSize: 12, color: S.dim, marginTop: 4, lineHeight: 1.45 }}>
@@ -418,19 +426,19 @@ export function ProgresoScreen() {
       <div style={{ flexShrink: 0, paddingTop: 'max(60px, calc(env(safe-area-inset-top, 0px) + 22px))', paddingLeft: 22, paddingRight: 22 }}>
         <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: -0.5, color: S.ink }}>Progreso</div>
 
-        <div style={{ display: 'flex', background: S.surf, borderRadius: 14, padding: 3, border: `1px solid ${S.line2}`, marginTop: 16 }}>
+        <div style={{ display: 'flex', background: S.surf, borderRadius: 16, padding: 3, border: `1px solid ${S.line2}`, marginTop: 16 }}>
           {([['fuerza', 'Marcas'], ['musculos', 'Músculos'], ['series', 'Series']] as [Tab, string][]).map(([t, label]) => (
             <button key={t} onClick={() => setTab(t)}
-              style={{ flex: 1, minHeight: 44, borderRadius: 11, border: 'none', fontFamily: 'DM Sans, system-ui, sans-serif', fontSize: 13, fontWeight: 600, cursor: 'pointer', background: tab === t ? S.surf2 : 'transparent', color: tab === t ? S.ink : S.dim, transition: 'all 0.15s ease-out' }}>
+              style={{ flex: 1, minHeight: 44, borderRadius: 12, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', background: tab === t ? S.surf2 : 'transparent', color: tab === t ? S.ink : S.dim, transition: 'all 0.15s ease-out' }}>
               {label}
             </button>
           ))}
         </div>
 
-        {tab !== 'series' && <div style={{ display: 'flex', background: S.surf, borderRadius: 14, padding: 3, border: `1px solid ${S.line2}`, marginTop: 8 }}>
+        {tab !== 'series' && <div style={{ display: 'flex', background: S.surf, borderRadius: 16, padding: 3, border: `1px solid ${S.line2}`, marginTop: 8 }}>
           {PERIODOS.map(([p, label]) => (
             <button key={p} onClick={() => setPeriod(p)}
-              style={{ flex: 1, minHeight: 40, borderRadius: 11, border: 'none', fontFamily: 'DM Sans, system-ui, sans-serif', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: period === p ? S.surf2 : 'transparent', color: period === p ? S.ink : S.dim, transition: 'all 0.15s ease-out' }}>
+              style={{ flex: 1, minHeight: 40, borderRadius: 12, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', background: period === p ? S.surf2 : 'transparent', color: period === p ? S.ink : S.dim, transition: 'all 0.15s ease-out' }}>
               {label}
             </button>
           ))}
@@ -454,10 +462,9 @@ export function ProgresoScreen() {
                   style={{
                     padding: '8px 14px', borderRadius: 20, flexShrink: 0, minHeight: 40,
                     fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                    fontFamily: 'DM Sans, system-ui, sans-serif',
                     background: selectedMuscle === null ? S.acc : S.surf2,
                     border: `1px solid ${selectedMuscle === null ? S.acc : S.line2}`,
-                    color: selectedMuscle === null ? '#fff' : S.dim,
+                    color: selectedMuscle === null ? S.ink : S.dim,
                   }}
                 >Todos</button>
                 {gruposConDatos.map(mg => {
@@ -471,7 +478,6 @@ export function ProgresoScreen() {
                       style={{
                         padding: '8px 14px', borderRadius: 20, flexShrink: 0, minHeight: 40,
                         fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                        fontFamily: 'DM Sans, system-ui, sans-serif',
                         background: activo ? cfg.color + '33' : S.surf2,
                         border: `1px solid ${activo ? cfg.color : S.line2}`,
                         color: activo ? cfg.color : S.dim,
@@ -489,7 +495,7 @@ export function ProgresoScreen() {
                     {ordenadas.length > 0 ? 'Sin datos para este grupo muscular' : `Sin entrenos en ${etiquetaPeriodo.toLowerCase()}`}
                   </p>
                   {ordenadas.length === 0 && (
-                    <p style={{ color: S.faint, fontSize: 11, marginTop: 4 }}>Probá con un periodo más largo</p>
+                    <p style={{ color: S.mute, fontSize: 11, marginTop: 4 }}>Probá con un periodo más largo</p>
                   )}
                 </div>
               </div>
@@ -500,7 +506,7 @@ export function ProgresoScreen() {
                   {secciones(visibles).map(([titulo, lista]) => lista.length > 0 && (
                     <section key={titulo}>
                       <h3 style={{ fontSize: 12, fontWeight: 700, color: S.dim, marginBottom: 2 }}>
-                        {titulo} <span className="num" style={{ color: S.faint, fontWeight: 500 }}>{lista.length}</span>
+                        {titulo} <span className="num" style={{ color: S.mute, fontWeight: 500 }}>{lista.length}</span>
                       </h3>
                       <div>
                         {lista.map(serie => (

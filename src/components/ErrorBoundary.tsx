@@ -39,7 +39,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
     if (!this.state.error) return this.props.children
     const boton = {
       width: '100%', minHeight: 48, borderRadius: 12, fontSize: 15, fontWeight: 700,
-      cursor: 'pointer', fontFamily: 'inherit',
+      cursor: 'pointer',
     } as const
     return (
       <div role="alert" style={{
@@ -47,7 +47,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
         padding: '40px 24px', background: 'var(--bg)', color: 'var(--ink)',
       }}>
         <h1 style={{ fontSize: 22, fontWeight: 700 }}>Algo salió mal</h1>
-        <p style={{ fontSize: 14, color: 'var(--dim)', lineHeight: 1.5 }}>
+        <p style={{ fontSize: 13, color: 'var(--dim)', lineHeight: 1.5 }}>
           La app no pudo abrir esta pantalla. Tus datos siguen guardados en el teléfono: antes de cualquier
           otra cosa, exportalos.
         </p>

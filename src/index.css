@@ -7,28 +7,8 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-:root {
-  --primary: #E8634A;
-  --primary-dim: #d4553e;
-  --acc: #E8634A;
-  --acc2: #F2A93B;
-  --good: #34D399;
-  --bg: #0C0E14;
-  --surf: #161821;
-  --surf2: #1C1F2A;
-  --ink: #ECEEF4;
-  --dim: #8A91A3;
-  --faint: #3B3F4E;
-  --line: rgba(236,238,244,0.07);
-  --line2: rgba(236,238,244,0.12);
-  /* legacy aliases */
-  --card: #161821;
-  --surface: #161821;
-  --border: rgba(236,238,244,0.07);
-  --border-hi: rgba(236,238,244,0.12);
-  --info: #38BDF8;
-  --gold: #F2A93B;
-}
+/* Las variables de color (--bg, --surf, --acc, --mute…) las genera
+   tailwind.config.js desde design-tokens.js. No escribirlas acá a mano. */
 
 html, body {
   margin: 0;
@@ -101,69 +81,62 @@ button {
 }
 button:active { transform: scale(0.97); }
 
-/* Primary button — coral solid */
-.btn-primary-glow {
-  background: var(--acc);
-  color: #fff;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  transition: all 0.15s;
-}
-.btn-primary-glow:active { transform: scale(0.98); }
-.btn-primary-glow:hover { background: rgba(232,99,74,0.9); }
-
-/* Card base — flat Aurora surface */
-.card-glow {
-  background: var(--surf);
-  border: 1px solid var(--line2);
-}
-
-.card-base {
-  background: var(--surf);
-  border: 1px solid var(--line2);
-}
-
-/* Stat card */
-.stat-card {
-  background: var(--surf2);
-  border: 1px solid var(--line2);
-}
-
 /* Bottom nav */
 .bottom-nav {
   background: var(--surf);
   border-top: 1px solid var(--line2);
 }
 
-/* Section label */
-.section-label {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  color: var(--dim);
-}
-
-/* Calendar day dots */
-.day-dot-active {
-  background: var(--acc);
-  color: #fff;
+/* Etiqueta de sección: una sola en toda la app. */
+.section-label,
+.eyebrow {
+  font-size: 11px;
   font-weight: 700;
-}
-.day-dot-today {
-  border: 1.5px solid var(--acc);
-  color: var(--acc);
-}
-.day-dot-past {
-  background: var(--surf2);
-  color: var(--dim);
-}
-.day-dot-future {
-  color: var(--faint);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mute);
 }
 
-/* Tab active */
-.tab-active-glow {
-  color: var(--acc);
+/* Botones. Texto oscuro sobre coral en todos (5,8:1); el blanco daba 3,3:1. */
+.btn-primary,
+.btn-secondary,
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  border-radius: var(--r-md);
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+}
+.btn-primary { background: var(--acc); color: var(--on-acc); border: none; }
+.btn-secondary { background: var(--surf2); color: var(--ink); border: 1px solid var(--line2); font-weight: 600; }
+.btn-ghost { background: transparent; color: var(--dim); border: none; font-weight: 600; }
+
+/* Foco visible para teclado y lectores de pantalla (los inputs lo apagaban). */
+:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 2px;
+}
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline-offset: 0;
+}
+
+/* Deshabilitado: una sola forma. */
+button:disabled,
+[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Heredar la fuente en los controles evita repetirla en cada botón. */
+button, input, select, textarea {
+  font-family: inherit;
 }
 
 /* Animations */
@@ -191,30 +164,22 @@ button:active { transform: scale(0.97); }
 }
 .onboarding-in { animation: onboarding-in 0.5s cubic-bezier(0.34,1.56,0.64,1); }
 
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-.fade-in { animation: fade-in 0.3s ease-out; }
-
-@keyframes scale-in {
-  from { transform: scale(0.9); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-.scale-in { animation: scale-in 0.2s cubic-bezier(0.34,1.56,0.64,1); }
-
+/* Serie hecha: la fila destella en el mismo verde del tilde (antes era coral,
+   y en 600 ms pasaban coral, verde y ámbar). */
 @keyframes set-complete {
   0% { background-color: transparent; }
-  25% { background-color: rgba(232,99,74,0.18); }
+  25% { background-color: rgba(52,211,153,0.12); }
   100% { background-color: transparent; }
 }
 .set-complete-flash { animation: set-complete 0.6s ease-out; }
 
-@keyframes pulse-acc {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(232,99,74,0.4); }
-  50% { box-shadow: 0 0 0 8px rgba(232,99,74,0); }
+/* Récord: el destello es ámbar y reemplaza al verde. */
+@keyframes record-flash {
+  0% { background-color: transparent; }
+  25% { background-color: rgba(242,169,59,0.22); }
+  100% { background-color: transparent; }
 }
-.pulse-pr { animation: pulse-acc 2s ease-in-out infinite; }
+.record-flash { animation: record-flash 0.9s ease-out; }
 
 /* Live timer dot — latido suave durante el entreno activo */
 @keyframes live-dot {
@@ -226,26 +191,6 @@ button:active { transform: scale(0.97); }
 /* Circular ring transition */
 circle[stroke-dashoffset] {
   transition: stroke-dashoffset 0.6s ease;
-}
-
-/* Exercise icon wrapper */
-.ex-icon-wrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 12px;
-  flex-shrink: 0;
-}
-
-/* Gradient text — kept for compatibility but uses acc color */
-.text-gradient-primary {
-  color: var(--acc);
-}
-
-/* Workout card accent */
-.workout-card-accent {
-  background: rgba(232,99,74,0.05);
-  border: 1px solid rgba(232,99,74,0.12);
 }
 
 input[type="number"]::-webkit-inner-spin-button,
@@ -267,7 +212,37 @@ h1, h2, h3, h4, h5, h6, p { margin: 0; padding: 0; }
 @keyframes cuenta-sube { 0% { transform: translateY(0); } 40% { transform: translateY(-3px); } 100% { transform: translateY(0); } }
 .cuenta-sube { display: inline-block; animation: cuenta-sube 300ms ease-out; }
 
+/* Fin del descanso: el anillo se completa en verde y la próxima serie late dos veces. */
+@keyframes descanso-fin {
+  0% { opacity: 0; transform: scale(0.92); }
+  15% { opacity: 1; transform: scale(1); }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.descanso-fin { animation: descanso-fin 1.3s ease-out forwards; }
+
+@keyframes late {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+.late { animation: late 1s ease-in-out infinite; }
+
+@keyframes proxima-pulso {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(52,211,153,0); }
+  50% { box-shadow: 0 0 0 4px rgba(52,211,153,0.35); }
+}
+.proxima-pulso { animation: proxima-pulso 0.7s ease-in-out 2; }
+
+@keyframes destello-verde {
+  0% { background: rgba(52,211,153,0.35); }
+  100% { background: transparent; }
+}
+.destello-verde { animation: destello-verde 0.9s ease-out; }
+
 @media (prefers-reduced-motion: reduce) {
-  .tilde::before { transition: none; }
-  .cuenta-sube { animation: none; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

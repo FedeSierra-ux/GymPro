@@ -124,14 +124,13 @@ export function HistorialBuscadorSheet({ onClose }: { onClose: () => void }) {
           aria-label="Buscar un ejercicio en el historial"
           style={{
             flexShrink: 0, width: '100%', background: S.surf2, border: `1px solid ${S.line2}`,
-            borderRadius: 12, padding: '12px 14px', fontSize: 16, color: S.ink,
-            fontFamily: 'DM Sans, system-ui, sans-serif', outline: 'none', marginBottom: 12,
+            borderRadius: 12, padding: '12px 14px', fontSize: 15, color: S.ink, outline: 'none', marginBottom: 12,
           }}
         />
 
         <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2" style={{ paddingBottom: 12 }}>
           {resultados.length === 0 && (
-            <p style={{ color: S.faint, fontSize: 13, textAlign: 'center', padding: '32px 0' }}>
+            <p style={{ color: S.mute, fontSize: 13, textAlign: 'center', padding: '32px 0' }}>
               {busqueda
                 ? `No entrenaste nada que coincida con «${busqueda}»`
                 : 'Todavía no hay entrenos en el historial'}
@@ -147,7 +146,7 @@ export function HistorialBuscadorSheet({ onClose }: { onClose: () => void }) {
                 style={{
                   display: 'flex', alignItems: 'center', gap: 12, width: '100%', textAlign: 'left',
                   background: S.surf2, border: `1px solid ${S.line2}`, borderLeft: `3px solid ${cfg?.color ?? S.line2}`,
-                  borderRadius: 12, padding: '12px 14px', minHeight: 60, cursor: 'pointer', fontFamily: 'inherit',
+                  borderRadius: 12, padding: '12px 14px', minHeight: 60, cursor: 'pointer',
                 }}
               >
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -160,7 +159,7 @@ export function HistorialBuscadorSheet({ onClose }: { onClose: () => void }) {
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: S.ink }}>{r.veces}</div>
-                  <div style={{ fontSize: 11, color: S.faint }}>{r.veces === 1 ? 'vez' : 'veces'}</div>
+                  <div style={{ fontSize: 11, color: S.mute }}>{r.veces === 1 ? 'vez' : 'veces'}</div>
                 </div>
               </button>
             )

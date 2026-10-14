@@ -172,17 +172,17 @@ export function RoutineDetailScreen() {
           <div className="flex-1 min-w-0">
             {editMode ? (
               <input
-                className="w-full rounded-xl px-3 py-1.5 text-white font-bold focus:outline-none"
+                className="w-full rounded-xl px-3 py-1.5 text-ink font-bold"
                 style={{
                   background: 'rgba(255,255,255,0.07)',
                   border: '1px solid rgba(232,99,74,0.3)',
-                  fontSize: 18,
+                  fontSize: 17,
                 }}
                 value={routine.name}
                 onChange={(e) => updateRoutine({ ...routine, name: e.target.value })}
               />
             ) : (
-              <h1 className="text-xl font-bold text-white truncate">
+              <h1 className="text-xl font-bold text-ink truncate">
                 <RoutineBadge routineId={routine.id} size={18} />{routine.name}
               </h1>
             )}
@@ -205,14 +205,14 @@ export function RoutineDetailScreen() {
 
         <div className="flex items-center gap-2 relative">
           <span
-            className="text-[11px] font-semibold px-2.5 py-1 rounded-full"
+            className="text-micro font-semibold px-2.5 py-1 rounded-full"
             style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)' }}
           >
             {routine.exercises.length} ejercicios
           </span>
           <span style={{ color: 'rgba(255,255,255,0.15)' }}>·</span>
           <span
-            className="text-[11px] font-semibold px-2.5 py-1 rounded-full"
+            className="text-micro font-semibold px-2.5 py-1 rounded-full"
             style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.4)' }}
           >
             ~{Math.round(totalDuration)} min
@@ -221,8 +221,8 @@ export function RoutineDetailScreen() {
             <>
               <span style={{ color: 'rgba(255,255,255,0.15)' }}>·</span>
               <span
-                className="text-[11px] font-semibold px-2.5 py-1 rounded-full"
-                style={{ background: 'rgba(232,99,74,0.06)', color: 'rgba(232,99,74,0.5)' }}
+                className="text-micro font-semibold px-2.5 py-1 rounded-full"
+                style={{ background: S.surf2, color: S.dim }}
               >
                 Último: {lastUsedDate}
               </span>
@@ -244,7 +244,7 @@ export function RoutineDetailScreen() {
             }
             startWorkout(routine.id)
           }}
-          className="flex-1 btn-primary-glow py-3 rounded-xl text-sm flex items-center justify-center gap-2"
+          className="flex-1 btn-primary py-3 rounded-xl text-sm flex items-center justify-center gap-2"
         >
           <PlayIcon />
           <span>Iniciar</span>
@@ -255,7 +255,7 @@ export function RoutineDetailScreen() {
           style={editMode ? {
             background: 'rgba(232,99,74,0.12)',
             border: '1px solid rgba(232,99,74,0.3)',
-            color: 'var(--primary)',
+            color: 'var(--acc)',
           } : {
             background: 'rgba(255,255,255,0.05)',
             border: '1px solid rgba(255,255,255,0.08)',
@@ -276,7 +276,7 @@ export function RoutineDetailScreen() {
               return (
                 <button key={v} role="radio" aria-checked={activo}
                   onClick={() => updateRoutine({ ...routine, variante: v })}
-                  style={{ flex: 1, minHeight: 40, borderRadius: 9, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', background: activo ? S.surf2 : 'transparent', color: activo ? S.ink : S.dim }}>
+                  style={{ flex: 1, minHeight: 40, borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', background: activo ? S.surf2 : 'transparent', color: activo ? S.ink : S.dim }}>
                   {VARIANTE_LABEL[v]}
                 </button>
               )
@@ -308,11 +308,11 @@ export function RoutineDetailScreen() {
               {nuevoBloque && (
                 <div className="flex items-baseline justify-between" style={{ margin: idx === 0 ? '0 2px 8px' : '14px 2px 8px' }}>
                   <h3 style={{ fontSize: 13, fontWeight: 700, color: S.ink }}>{re.block}</h3>
-                  <span style={{ fontSize: 11, color: S.faint }}>{bloqueCount} {bloqueCount === 1 ? 'ejercicio' : 'ejercicios'}</span>
+                  <span style={{ fontSize: 11, color: S.mute }}>{bloqueCount} {bloqueCount === 1 ? 'ejercicio' : 'ejercicios'}</span>
                 </div>
               )}
               {ss.primero && (
-                <p style={{ fontSize: 11, fontWeight: 700, color: S.acc, margin: '2px 0 6px 18px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Superserie</p>
+                <p style={{ fontSize: 11, fontWeight: 700, color: S.dim, margin: '2px 0 6px 18px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Superserie</p>
               )}
               <div style={{ position: 'relative', paddingLeft: ss.dentro ? 18 : 0 }}>
               {/* La llave que une los ejercicios de la superserie */}
@@ -320,9 +320,9 @@ export function RoutineDetailScreen() {
                 <span aria-hidden="true" style={{
                   position: 'absolute', left: 4, width: 8,
                   top: ss.primero ? '50%' : -10, bottom: ss.ultimo ? '50%' : -10,
-                  borderLeft: `2px solid ${S.acc}`,
-                  borderTop: ss.primero ? `2px solid ${S.acc}` : 'none',
-                  borderBottom: ss.ultimo ? `2px solid ${S.acc}` : 'none',
+                  borderLeft: `2px solid ${S.dim}`,
+                  borderTop: ss.primero ? `2px solid ${S.dim}` : 'none',
+                  borderBottom: ss.ultimo ? `2px solid ${S.dim}` : 'none',
                   borderRadius: ss.primero ? '6px 0 0 0' : ss.ultimo ? '0 0 0 6px' : 0,
                 }} />
               )}
@@ -366,10 +366,10 @@ export function RoutineDetailScreen() {
                 <ExerciseThumbnail exercise={ex} size={48} />
 
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-white text-sm truncate mb-0.5">{ex.nameEs}</p>
+                  <p className="font-semibold text-ink text-sm truncate mb-0.5">{ex.nameEs}</p>
                   <div className="flex items-center gap-2 flex-wrap">
                     <span
-                      className="text-[11px] px-1.5 py-0.5 rounded font-medium"
+                      className="text-micro px-1.5 py-0.5 rounded font-medium"
                       style={{ color: config.color, backgroundColor: config.color + '18' }}
                     >
                       {config.label}
@@ -382,9 +382,9 @@ export function RoutineDetailScreen() {
                           max={20}
                           ariaLabel="Series"
                           onCommit={(v) => updateSerie(re, { sets: v })}
-                          className="w-9 text-center text-xs font-semibold rounded-lg py-1 border focus:outline-none focus:border-primary text-white bg-surface border-border"
+                          className="w-9 text-center text-xs font-semibold rounded-lg py-1 border focus:border-primary text-ink bg-surface border-border"
                         />
-                        <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.3)' }}>×</span>
+                        <span className="text-micro" style={{ color: 'rgba(255,255,255,0.3)' }}>×</span>
                         <DraftNumberInput
                           value={Number(fromSeconds(uso.targetSeconds ?? 0, unit) || 0)}
                           min={0}
@@ -392,9 +392,9 @@ export function RoutineDetailScreen() {
                           decimal={unit === 'min'}
                           ariaLabel={unit === 'min' ? 'Minutos' : 'Segundos'}
                           onCommit={(v) => updateSerie(re, { targetSeconds: toSeconds(v, unit) })}
-                          className="w-12 text-center text-xs font-semibold rounded-lg py-1 border focus:outline-none focus:border-primary text-white bg-surface border-border"
+                          className="w-12 text-center text-xs font-semibold rounded-lg py-1 border focus:border-primary text-ink bg-surface border-border"
                         />
-                        <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.3)' }}>{unit}</span>
+                        <span className="text-micro" style={{ color: 'rgba(255,255,255,0.3)' }}>{unit}</span>
                       </div>
                     ) : editMode ? (
                       <div className="flex items-center gap-1.5">
@@ -404,9 +404,9 @@ export function RoutineDetailScreen() {
                           max={20}
                           ariaLabel="Series"
                           onCommit={(v) => updateSerie(re, { sets: v })}
-                          className="w-9 text-center text-xs font-semibold rounded-lg py-1 border focus:outline-none focus:border-primary text-white bg-surface border-border"
+                          className="w-9 text-center text-xs font-semibold rounded-lg py-1 border focus:border-primary text-ink bg-surface border-border"
                         />
-                        <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.3)' }}>s ·</span>
+                        <span className="text-micro" style={{ color: 'rgba(255,255,255,0.3)' }}>s ·</span>
                         <DraftNumberInput
                           value={uso.repsMin}
                           min={1}
@@ -414,21 +414,21 @@ export function RoutineDetailScreen() {
                           ariaLabel="Reps mínimas"
                           // Si el piso pasa al techo, el techo sube con él (8-12 → 15-15).
                           onCommit={(v) => updateSerie(re, { repsMin: v, ...(v > uso.repsMax ? { repsMax: v } : {}) })}
-                          className="w-9 text-center text-xs font-semibold rounded-lg py-1 border focus:outline-none focus:border-primary text-white bg-surface border-border"
+                          className="w-9 text-center text-xs font-semibold rounded-lg py-1 border focus:border-primary text-ink bg-surface border-border"
                         />
-                        <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.3)' }}>–</span>
+                        <span className="text-micro" style={{ color: 'rgba(255,255,255,0.3)' }}>–</span>
                         <DraftNumberInput
                           value={uso.repsMax}
                           min={1}
                           max={100}
                           ariaLabel="Reps máximas"
                           onCommit={(v) => updateSerie(re, { repsMax: v, ...(v < uso.repsMin ? { repsMin: v } : {}) })}
-                          className="w-9 text-center text-xs font-semibold rounded-lg py-1 border focus:outline-none focus:border-primary text-white bg-surface border-border"
+                          className="w-9 text-center text-xs font-semibold rounded-lg py-1 border focus:border-primary text-ink bg-surface border-border"
                         />
-                        <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.3)' }}>r</span>
+                        <span className="text-micro" style={{ color: 'rgba(255,255,255,0.3)' }}>r</span>
                       </div>
                     ) : (
-                      <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                      <span className="text-micro" style={{ color: 'rgba(255,255,255,0.3)' }}>
                         {byTime
                           ? `${uso.sets > 1 ? `${uso.sets} × ` : ''}${formatDuration(uso.targetSeconds ?? 0)}`
                           : `${uso.sets} series · ${uso.repsMin === uso.repsMax ? uso.repsMin : `${uso.repsMin}–${uso.repsMax}`} reps`}
@@ -436,7 +436,7 @@ export function RoutineDetailScreen() {
                     )}
                   </div>
                   {re.note && (
-                    <p className="text-[11px] mt-1 leading-snug" style={{ color: 'rgba(242,169,59,0.75)' }}>
+                    <p className="text-micro mt-1 leading-snug" style={{ color: 'rgba(242,169,59,0.75)' }}>
                       {re.note}
                     </p>
                   )}
@@ -447,7 +447,7 @@ export function RoutineDetailScreen() {
                     onClick={() => setOpcionesDe(re.exerciseId)}
                     aria-label={`Bloque y superserie de ${ex.nameEs}`}
                     className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)', fontSize: 16 }}
+                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)', fontSize: 15 }}
                   >
                     ⋯
                   </button>
@@ -510,7 +510,7 @@ export function RoutineDetailScreen() {
               setQuickName('')
             }}
             placeholder="…o escribí el nombre y listo"
-            className="w-full rounded-xl px-3 py-3 text-white text-sm focus:outline-none"
+            className="w-full rounded-xl px-3 py-3 text-ink text-sm"
             style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}
           />
           <CreateExerciseCard
@@ -547,11 +547,11 @@ export function RoutineDetailScreen() {
                 value={re.block ?? ''}
                 onChange={(e) => updateExerciseConfig(re.exerciseId, { block: e.target.value || undefined })}
                 placeholder="Ej: Circuito de entrada · 3 rondas"
-                className="w-full rounded-xl px-3 py-3 text-sm focus:outline-none"
+                className="w-full rounded-xl px-3 py-3 text-sm"
                 style={{ marginTop: 6, background: S.surf2, border: `1px solid ${S.line2}`, color: S.ink }}
               />
               <datalist id="bloques-rutina">{bloques.map((b) => <option key={b} value={b} />)}</datalist>
-              <p style={{ fontSize: 11, color: S.faint, marginTop: 6 }}>Se muestra como título arriba del primer ejercicio del bloque.</p>
+              <p style={{ fontSize: 11, color: S.mute, marginTop: 6 }}>Se muestra como título arriba del primer ejercicio del bloque.</p>
 
               {siguiente && (
                 <button
@@ -559,7 +559,7 @@ export function RoutineDetailScreen() {
                     ? separarDelSiguiente(sortedExercises, idx, `ss-${Date.now()}`)
                     : unirConSiguiente(sortedExercises, idx, `ss-${Date.now()}`))}
                   className="w-full text-left"
-                  style={{ marginTop: 16, padding: '14px 16px', borderRadius: 14, background: S.surf2, border: `1px solid ${S.line2}`, color: S.ink, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                  style={{ marginTop: 16, padding: '14px 16px', borderRadius: 12, background: S.surf2, border: `1px solid ${S.line2}`, color: S.ink, fontSize: 15, fontWeight: 600, cursor: 'pointer' }}
                 >
                   {unidoAlSiguiente ? '☑ En superserie con el siguiente' : '☐ Superserie con el siguiente'}
                   <span style={{ display: 'block', fontSize: 11, fontWeight: 500, color: S.dim, marginTop: 2 }}>
@@ -569,7 +569,7 @@ export function RoutineDetailScreen() {
               )}
 
               <button onClick={() => setOpcionesDe(null)}
-                style={{ width: '100%', marginTop: 10, padding: '14px 16px', borderRadius: 14, background: 'none', border: `1px solid ${S.line2}`, color: S.dim, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                style={{ width: '100%', marginTop: 10, padding: '14px 16px', borderRadius: 12, background: 'none', border: `1px solid ${S.line2}`, color: S.dim, fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>
                 Listo
               </button>
             </Dialog>
@@ -588,7 +588,7 @@ export function RoutineDetailScreen() {
               boxShadow: '0 24px 64px rgba(0,0,0,0.7)',
             }}
           >
-            <h3 className="text-white font-bold text-lg mb-2">¿Eliminar rutina?</h3>
+            <h3 className="text-ink font-bold text-lg mb-2">¿Eliminar rutina?</h3>
             <p className="text-sm mb-5" style={{ color: 'rgba(255,255,255,0.4)' }}>
               Se eliminará "{routine.name}" y no se puede deshacer.
             </p>
@@ -611,7 +611,7 @@ export function RoutineDetailScreen() {
                 }}
                 className="flex-1 py-3 rounded-xl font-bold text-sm transition-colors"
                 style={{
-                  background: 'rgba(239,68,68,0.15)',
+                  background: 'rgba(248,113,113,0.15)',
                   color: 'rgb(248,113,113)',
                   border: '1px solid rgba(239,68,68,0.3)',
                 }}

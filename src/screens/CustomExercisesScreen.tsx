@@ -7,6 +7,7 @@ import { ExerciseFrames } from '../components/ExerciseFrames'
 import { MuscleBodyMap } from '../components/MuscleBodyMap'
 import { draftFromName } from '../utils/exerciseMatch'
 import type { MuscleGroup, Exercise } from '../types'
+import { S } from '../theme'
 
 const muscleGroups: MuscleGroup[] = [
   'pecho', 'espalda', 'hombros', 'biceps',
@@ -87,14 +88,14 @@ export function CustomExercisesScreen({ onClose }: Props) {
             </svg>
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-bold text-white">Mis ejercicios</h1>
+            <h1 className="text-lg font-bold text-ink">Mis ejercicios</h1>
             <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
               {customExercises.length} propios · tocá uno para editarlo
             </p>
           </div>
           <button
             onClick={() => setShowForm(true)}
-            className="px-3 py-1.5 rounded-xl text-xs font-bold text-black btn-primary-glow"
+            className="px-3 py-1.5 rounded-xl text-xs font-bold btn-primary"
           >
             + Nuevo
           </button>
@@ -108,7 +109,7 @@ export function CustomExercisesScreen({ onClose }: Props) {
             style={{ border: '1.5px dashed rgba(232,99,74,0.2)', background: 'rgba(232,99,74,0.03)' }}
           >
             <div className="text-3xl mb-2">🏋️</div>
-            <p className="text-white font-semibold text-sm mb-1">Sin ejercicios personalizados</p>
+            <p className="text-ink font-semibold text-sm mb-1">Sin ejercicios personalizados</p>
             <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>Creá ejercicios propios y agregálos a tus rutinas</p>
           </div>
         )}
@@ -133,16 +134,16 @@ export function CustomExercisesScreen({ onClose }: Props) {
               >
               <ExerciseThumbnail exercise={ex} size={44} />
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-white text-sm truncate">{ex.nameEs}</p>
+                <p className="font-semibold text-ink text-sm truncate">{ex.nameEs}</p>
                 <div className="flex items-center gap-2 mt-0.5">
                   <span
-                    className="text-[11px] px-1.5 py-0.5 rounded font-medium"
+                    className="text-micro px-1.5 py-0.5 rounded font-medium"
                     style={{ color: config.color, backgroundColor: config.color + '18' }}
                   >
                     {config.label}
                   </span>
                   {ex.equipment && (
-                    <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.3)' }}>{ex.equipment}</span>
+                    <span className="text-micro" style={{ color: 'rgba(255,255,255,0.3)' }}>{ex.equipment}</span>
                   )}
                 </div>
               </div>
@@ -173,21 +174,21 @@ export function CustomExercisesScreen({ onClose }: Props) {
               boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
             }}
           >
-            <h3 className="text-white font-bold text-sm">{editingId ? 'Editar ejercicio' : 'Nuevo ejercicio'}</h3>
-            <p className="text-[11px]" style={{ color: 'rgba(255,255,255,0.35)' }}>
+            <h3 className="text-ink font-bold text-sm">{editingId ? 'Editar ejercicio' : 'Nuevo ejercicio'}</h3>
+            <p className="text-micro" style={{ color: 'rgba(255,255,255,0.35)' }}>
               {editingId
                 ? 'El historial y los récords se mantienen: sólo cambia cómo se muestra.'
                 : 'Con el nombre alcanza: la app deduce grupo, equipamiento y dibujo. Podés corregir lo que quieras.'}
             </p>
             <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.35)' }}>Nombre</label>
+              <label className="text-micro font-semibold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.35)' }}>Nombre</label>
               <input
                 autoFocus
                 type="text"
                 placeholder="Ej: Press de suelo"
                 value={nameEs}
                 onChange={(e) => setNameEs(e.target.value)}
-                className="w-full rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none"
+                className="w-full rounded-xl px-3 py-2.5 text-ink text-sm"
                 style={{
                   background: 'rgba(255,255,255,0.06)',
                   border: '1px solid rgba(255,255,255,0.1)',
@@ -195,11 +196,11 @@ export function CustomExercisesScreen({ onClose }: Props) {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.35)' }}>Grupo muscular</label>
+              <label className="text-micro font-semibold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.35)' }}>Grupo muscular</label>
               <select
                 value={muscleGroup}
                 onChange={(e) => setMuscleGroup(e.target.value as MuscleGroup)}
-                className="w-full rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none appearance-none"
+                className="w-full rounded-xl px-3 py-2.5 text-ink text-sm appearance-none"
                 style={{
                   background: 'rgba(255,255,255,0.06)',
                   border: '1px solid rgba(255,255,255,0.1)',
@@ -213,13 +214,13 @@ export function CustomExercisesScreen({ onClose }: Props) {
               </select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.35)' }}>Equipamiento (opcional)</label>
+              <label className="text-micro font-semibold uppercase tracking-wider" style={{ color: 'rgba(255,255,255,0.35)' }}>Equipamiento (opcional)</label>
               <input
                 type="text"
                 placeholder="Ej: Barra, Mancuernas, Polea..."
                 value={equipment}
                 onChange={(e) => setEquipment(e.target.value)}
-                className="w-full rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none"
+                className="w-full rounded-xl px-3 py-2.5 text-ink text-sm"
                 style={{
                   background: 'rgba(255,255,255,0.06)',
                   border: '1px solid rgba(255,255,255,0.1)',
@@ -234,9 +235,9 @@ export function CustomExercisesScreen({ onClose }: Props) {
                     ? <ExerciseFrames slug={draft.frameSlug} size={44} alt={nameEs} animate />
                     : <MuscleBodyMap muscleGroup={muscleGroup} size={32} />}
                 </div>
-                <p className="text-[11px] flex-1 min-w-0" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                <p className="text-micro flex-1 min-w-0" style={{ color: 'rgba(255,255,255,0.4)' }}>
                   {draft.frameSlug
-                    ? <>Dibujo: <span className="text-white">{draft.matchedName}</span> · {draft.equipment}</>
+                    ? <>Dibujo: <span className="text-ink">{draft.matchedName}</span> · {draft.equipment}</>
                     : 'Sin dibujo parecido: se usa el ícono del grupo muscular.'}
                 </p>
               </div>
@@ -257,7 +258,7 @@ export function CustomExercisesScreen({ onClose }: Props) {
               <button
                 onClick={handleSubmit}
                 disabled={!nameEs.trim()}
-                className="flex-1 py-2.5 rounded-xl font-bold text-sm text-black btn-primary-glow disabled:opacity-40"
+                className="flex-1 py-2.5 rounded-xl font-bold text-sm btn-primary disabled:opacity-40"
               >
                 {editingId ? 'Guardar' : 'Crear'}
               </button>
@@ -273,12 +274,12 @@ export function CustomExercisesScreen({ onClose }: Props) {
           <div className="fixed inset-0 flex items-center justify-center z-50 px-6" style={{ background: 'rgba(0,0,0,0.8)' }} onClick={() => setConfirmDelete(null)}>
             <Dialog label="Eliminar ejercicio" onClose={() => setConfirmDelete(null)}
               className="rounded-2xl p-6 w-full"
-              style={{ background: '#161821', border: '1px solid rgba(255,255,255,0.12)', maxWidth: 340 }}
+              style={{ background: S.surf, border: '1px solid rgba(255,255,255,0.12)', maxWidth: 340 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="font-bold text-white text-lg mb-2">¿Eliminar este ejercicio?</h3>
+              <h3 className="font-bold text-ink text-lg mb-2">¿Eliminar este ejercicio?</h3>
               <p className="text-sm mb-1" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                <strong className="text-white">{confirmDelete.nameEs}</strong> deja de aparecer para elegir.
+                <strong className="text-ink">{confirmDelete.nameEs}</strong> deja de aparecer para elegir.
                 {sesiones > 0 && ` Las ${sesiones === 1 ? 'una sesión' : `${sesiones} sesiones`} que ya hiciste quedan en el historial.`}
               </p>
               {usedInRoutines.length > 0 && (
@@ -303,7 +304,7 @@ export function CustomExercisesScreen({ onClose }: Props) {
                     addUndoToast(`Eliminaste ${ejercicio.nameEs}`, () => restoreCustomExercise(ejercicio, rutinasAntes))
                   }}
                   className="flex-1 py-3 rounded-xl text-sm font-bold"
-                  style={{ border: 'none', background: 'rgba(239,68,68,0.15)', color: '#f87171' }}
+                  style={{ border: 'none', background: 'rgba(248,113,113,0.15)', color: S.bad }}
                 >
                   Eliminar
                 </button>

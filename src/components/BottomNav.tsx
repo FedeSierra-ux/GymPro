@@ -1,5 +1,6 @@
 import type { NavTab } from '../types'
 import { useStore } from '../store/useStore'
+import { S } from '../theme'
 
 const TABS: { id: NavTab; label: string; emoji: string }[] = [
   { id: 'home', label: 'Inicio', emoji: '🏠' },
@@ -26,20 +27,20 @@ export function BottomNav() {
                 if (id !== 'rutinas') setActiveRoutineId(null)
               }}
               className="flex-1 flex flex-col items-center gap-1 py-[11px]"
-              style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'DM Sans, system-ui, sans-serif' }}
+              style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer' }}
             >
               {/* Active indicator bar */}
               <div style={{
                 position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
                 width: isActive ? 24 : 0, height: 2, borderRadius: 1,
-                background: '#E8634A', transition: 'width 0.2s ease',
+                background: S.acc, transition: 'width 0.2s ease',
               }} />
-              <span style={{ fontSize: 18, opacity: isActive ? 1 : 0.35, transition: 'opacity 0.15s' }}>{emoji}</span>
+              <span style={{ fontSize: 17, opacity: isActive ? 1 : 0.35, transition: 'opacity 0.15s' }}>{emoji}</span>
               <span
                 style={{
                   fontSize: 11,
                   fontWeight: isActive ? 700 : 500,
-                  color: isActive ? '#E8634A' : '#8A91A3',
+                  color: isActive ? S.acc : S.dim,
                   transition: 'color 0.15s',
                 }}
               >

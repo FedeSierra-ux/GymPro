@@ -13,25 +13,24 @@ function ToastItem({ toast }: { toast: AppToast }) {
     return () => clearTimeout(t)
   }, [toast.id, toast.type, toast.undo, removeToast])
 
-  const fondo = {
-    success: S.acc,
-    pr: S.acc2,
-    info: S.surf2,
-  }[toast.type]
-  const texto = toast.type === 'info' ? S.ink : '#0C0E14'
+  // Todos sobre la misma superficie: el coral lleno parecía un botón. El tipo
+  // lo dice el ícono (verde hecho, ámbar récord).
+  const icono = { success: { c: '✓', color: S.good }, pr: { c: '🏆', color: S.acc2 }, info: null }[toast.type]
 
   return (
     <div
-      className="toast-in flex items-center gap-3 rounded-2xl shadow-lg"
+      className="toast-in flex items-center gap-3 rounded-2xl"
       style={{
-        background: fondo,
-        border: toast.type === 'info' ? `1px solid ${S.line2}` : 'none',
+        background: S.surf2,
+        border: `1px solid ${toast.type === 'pr' ? 'rgba(242,169,59,0.45)' : S.line2}`,
+        boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
         padding: toast.undo ? '8px 8px 8px 16px' : '12px 16px',
         minHeight: 48,
       }}
       onClick={() => { if (!toast.undo) removeToast(toast.id) }}
     >
-      <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 600, color: texto, lineHeight: 1.35 }}>
+      {icono && <span aria-hidden="true" style={{ color: icono.color, fontSize: 13, fontWeight: 700, flexShrink: 0 }}>{icono.c}</span>}
+      <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 600, color: S.ink, lineHeight: 1.35 }}>
         {toast.message}
       </span>
       {toast.undo && (
@@ -41,7 +40,7 @@ function ToastItem({ toast }: { toast: AppToast }) {
             flexShrink: 0, minHeight: 40, padding: '0 16px', borderRadius: 12,
             background: 'rgba(232,99,74,0.14)', border: `1px solid ${S.acc}`,
             color: S.acc, fontSize: 13, fontWeight: 700,
-            cursor: 'pointer', fontFamily: 'DM Sans, system-ui, sans-serif',
+            cursor: 'pointer',
           }}
         >
           Deshacer

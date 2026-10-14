@@ -127,7 +127,7 @@ function DaySheet({
                           <button
                             onClick={() => borrarConDeshacer(w)}
                             aria-label="Borrar este entreno"
-                            style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', color: S.dim, fontSize: 16, background: 'none', border: 'none', cursor: 'pointer' }}
+                            style={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', color: S.dim, fontSize: 15, background: 'none', border: 'none', cursor: 'pointer' }}
                           >🗑</button>
                         </div>
                         <div className="flex flex-col gap-1">
@@ -140,12 +140,12 @@ function DaySheet({
                               <div key={we.exerciseId} className="flex items-center justify-between">
                                 <p style={{ color: S.dim, fontSize: 11 }}>{ex.nameEs}</p>
                                 {byTime
-                                  ? <p style={{ color: S.faint, fontSize: 11 }}>{formatDuration(totalSeconds(we.sets))}</p>
-                                  : best && <p style={{ color: S.faint, fontSize: 11 }}>{formatLoad(best.kg, best.reps, { conReps: false })}</p>}
+                                  ? <p style={{ color: S.mute, fontSize: 11 }}>{formatDuration(totalSeconds(we.sets))}</p>
+                                  : best && <p style={{ color: S.mute, fontSize: 11 }}>{formatLoad(best.kg, best.reps, { conReps: false })}</p>}
                               </div>
                             )
                           })}
-                          {w.exercises.length > 4 && <p style={{ color: S.faint, fontSize: 11 }}>+{w.exercises.length - 4} más...</p>}
+                          {w.exercises.length > 4 && <p style={{ color: S.mute, fontSize: 11 }}>+{w.exercises.length - 4} más...</p>}
                         </div>
                       </div>
                     )
@@ -154,14 +154,13 @@ function DaySheet({
               )}
             </div>
             {isFuture ? (
-              <p style={{ marginTop: 16, textAlign: 'center', fontSize: 12, color: S.faint, flexShrink: 0 }}>
+              <p style={{ marginTop: 16, textAlign: 'center', fontSize: 12, color: S.mute, flexShrink: 0 }}>
                 No podés registrar entrenos en fechas futuras
               </p>
             ) : (
               <button onClick={() => setShowRoutinePicker(true)} style={{
-                marginTop: 16, width: '100%', padding: '14px 0', borderRadius: 14,
-                background: S.acc, border: 'none', color: '#fff',
-                fontFamily: 'DM Sans, system-ui, sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer', flexShrink: 0,
+                marginTop: 16, width: '100%', padding: '14px 0', borderRadius: 12,
+                background: S.acc, border: 'none', color: S.onAcc, fontWeight: 700, fontSize: 15, cursor: 'pointer', flexShrink: 0,
               }}>
                 + Registrar entreno
               </button>
@@ -291,8 +290,8 @@ function EditWorkoutSheet({ workout, onClose }: { workout: Workout; onClose: () 
         {confirmarDescarte && (
           <div role="alert" className="flex items-center gap-2 mb-3 flex-shrink-0" style={{ background: S.surf2, border: `1px solid ${S.line2}`, borderRadius: 12, padding: '8px 10px' }}>
             <span style={{ flex: 1, fontSize: 13, color: S.ink }}>Tenés cambios sin guardar</span>
-            <button onClick={() => setConfirmarDescarte(false)} style={{ minHeight: 36, padding: '0 10px', borderRadius: 10, border: `1px solid ${S.line2}`, background: 'none', color: S.ink, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Seguir editando</button>
-            <button onClick={onClose} style={{ minHeight: 36, padding: '0 10px', borderRadius: 10, border: 'none', background: 'rgba(239,68,68,0.15)', color: '#f87171', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Descartar</button>
+            <button onClick={() => setConfirmarDescarte(false)} style={{ minHeight: 36, padding: '0 10px', borderRadius: 12, border: `1px solid ${S.line2}`, background: 'none', color: S.ink, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Seguir editando</button>
+            <button onClick={onClose} style={{ minHeight: 36, padding: '0 10px', borderRadius: 12, border: 'none', background: 'rgba(248,113,113,0.15)', color: S.bad, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Descartar</button>
           </div>
         )}
 
@@ -302,12 +301,12 @@ function EditWorkoutSheet({ workout, onClose }: { workout: Workout; onClose: () 
               <label style={{ fontSize: 11, color: S.dim, fontWeight: 600 }}>Fecha</label>
               <input type="date" value={dateStr} max={hoyStr} onChange={(e) => setDateStr(e.target.value)}
                 aria-invalid={!fechaValida}
-                style={{ width: '100%', marginTop: 4, background: S.surf2, border: `1px solid ${S.line2}`, borderRadius: 10, padding: '10px 12px', fontSize: 16, color: S.ink, fontFamily: 'inherit' }} />
+                style={{ width: '100%', marginTop: 4, background: S.surf2, border: `1px solid ${S.line2}`, borderRadius: 12, padding: '10px 12px', fontSize: 15, color: S.ink }} />
             </div>
             <div style={{ width: 120 }}>
               <label style={{ fontSize: 11, color: S.dim, fontWeight: 600 }}>Duración (min)</label>
               <input {...integerInputProps} value={durationStr} onChange={(e) => setDurationStr(e.target.value)}
-                style={{ width: '100%', marginTop: 4, background: S.surf2, border: `1px solid ${S.line2}`, borderRadius: 10, padding: '10px 12px', fontSize: 16, color: S.ink, fontFamily: 'inherit' }} />
+                style={{ width: '100%', marginTop: 4, background: S.surf2, border: `1px solid ${S.line2}`, borderRadius: 12, padding: '10px 12px', fontSize: 15, color: S.ink }} />
             </div>
           </div>
 
@@ -316,28 +315,28 @@ function EditWorkoutSheet({ workout, onClose }: { workout: Workout; onClose: () 
             const byTime = isDurationExercise(exInfo)
             const unit = durationUnit(exInfo)
             return (
-              <div key={ex.exerciseId} style={{ background: S.surf2, borderRadius: 14, padding: 12, border: `1px solid ${S.line2}` }}>
+              <div key={ex.exerciseId} style={{ background: S.surf2, borderRadius: 16, padding: 12, border: `1px solid ${S.line2}` }}>
                 <p style={{ fontSize: 13, fontWeight: 700, color: S.ink, marginBottom: 8 }}>{exInfo?.nameEs ?? ex.exerciseId}</p>
                 <div className="flex flex-col gap-2">
                   {ex.sets.map((s, setIdx) => (
                     <div key={setIdx} className="flex items-center gap-2">
-                      <span style={{ width: 18, fontSize: 11, color: S.faint }}>{setIdx + 1}</span>
+                      <span style={{ width: 18, fontSize: 11, color: S.mute }}>{setIdx + 1}</span>
                       {byTime ? (
                         <>
                           <input {...decimalInputProps} value={s.duration} onChange={(e) => setValue(exIdx, setIdx, 'duration', e.target.value)}
                             placeholder={unit}
-                            style={{ flex: 1, minWidth: 0, background: S.surf, border: `1px solid ${S.line2}`, borderRadius: 8, padding: '6px 10px', fontSize: 16, color: S.ink, fontFamily: 'inherit' }} />
-                          <span style={{ color: S.faint, fontSize: 11 }}>{unit}</span>
+                            style={{ flex: 1, minWidth: 0, background: S.surf, border: `1px solid ${S.line2}`, borderRadius: 8, padding: '6px 10px', fontSize: 15, color: S.ink }} />
+                          <span style={{ color: S.mute, fontSize: 11 }}>{unit}</span>
                         </>
                       ) : (
                         <>
                           <input {...decimalInputProps} value={s.kg} onChange={(e) => setValue(exIdx, setIdx, 'kg', e.target.value)}
                             placeholder="kg"
-                            style={{ flex: 1, minWidth: 0, background: S.surf, border: `1px solid ${S.line2}`, borderRadius: 8, padding: '6px 10px', fontSize: 16, color: S.ink, fontFamily: 'inherit' }} />
-                          <span style={{ color: S.faint, fontSize: 11 }}>×</span>
+                            style={{ flex: 1, minWidth: 0, background: S.surf, border: `1px solid ${S.line2}`, borderRadius: 8, padding: '6px 10px', fontSize: 15, color: S.ink }} />
+                          <span style={{ color: S.mute, fontSize: 11 }}>×</span>
                           <input {...integerInputProps} value={s.reps} onChange={(e) => setValue(exIdx, setIdx, 'reps', e.target.value)}
                             placeholder="reps"
-                            style={{ flex: 1, minWidth: 0, background: S.surf, border: `1px solid ${S.line2}`, borderRadius: 8, padding: '6px 10px', fontSize: 16, color: S.ink, fontFamily: 'inherit' }} />
+                            style={{ flex: 1, minWidth: 0, background: S.surf, border: `1px solid ${S.line2}`, borderRadius: 8, padding: '6px 10px', fontSize: 15, color: S.ink }} />
                         </>
                       )}
                       <button onClick={() => removeSet(exIdx, setIdx)}
@@ -347,7 +346,7 @@ function EditWorkoutSheet({ workout, onClose }: { workout: Workout; onClose: () 
                   ))}
                 </div>
                 <button onClick={() => addSet(exIdx)}
-                  style={{ marginTop: 8, fontSize: 11, fontWeight: 600, color: S.acc, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  style={{ marginTop: 8, fontSize: 11, fontWeight: 600, color: S.acc, background: 'none', border: 'none', cursor: 'pointer' }}>
                   + Agregar serie
                 </button>
               </div>
@@ -356,14 +355,13 @@ function EditWorkoutSheet({ workout, onClose }: { workout: Workout; onClose: () 
         </div>
 
         {!fechaValida && (
-          <p role="alert" style={{ marginTop: 12, fontSize: 12, color: '#f87171', flexShrink: 0 }}>
+          <p role="alert" style={{ marginTop: 12, fontSize: 12, color: S.bad, flexShrink: 0 }}>
             Elegí una fecha de hoy o anterior para poder guardar.
           </p>
         )}
         <button onClick={handleSave} disabled={!fechaValida} style={{
-          marginTop: 16, width: '100%', padding: '14px 0', borderRadius: 14,
-          background: S.acc, border: 'none', color: '#fff', opacity: fechaValida ? 1 : 0.4,
-          fontFamily: 'DM Sans, system-ui, sans-serif', fontWeight: 700, fontSize: 14, cursor: fechaValida ? 'pointer' : 'default', flexShrink: 0,
+          marginTop: 16, width: '100%', padding: '14px 0', borderRadius: 12,
+          background: S.acc, border: 'none', color: S.onAcc, opacity: fechaValida ? 1 : 0.4, fontWeight: 700, fontSize: 15, cursor: fechaValida ? 'pointer' : 'default', flexShrink: 0,
         }}>
           Guardar cambios
         </button>
@@ -411,12 +409,12 @@ function WeekPlanDayRow({
         onPointerLeave={cancelPress}
         onPointerCancel={cancelPress}
         onContextMenu={(e) => e.preventDefault()}
-        className="flex-1 rounded-lg px-2 text-xs focus:outline-none appearance-none"
+        className="flex-1 rounded-lg px-2 text-xs appearance-none"
         style={{
-          minHeight: 36, background: 'transparent', fontFamily: 'DM Sans, system-ui, sans-serif',
+          minHeight: 36, background: 'transparent',
           // Aro con el color de la rutina, como en el calendario de arriba; el descanso, tenue.
           border: routine ? `1.5px solid ${routineColor(routine.id, routines)}` : '1.5px solid transparent',
-          color: routine ? S.ink : S.faint, fontWeight: routine ? 700 : 500,
+          color: routine ? S.ink : S.mute, fontWeight: routine ? 700 : 500,
         }}>
         <option value="" style={{ background: S.surf, color: S.dim }}>Descanso</option>
         {routines.map((r) => <option key={r.id} value={r.id} style={{ background: S.surf, color: S.ink }}>{r.name}</option>)}
@@ -435,15 +433,14 @@ function rangoSemana(lunes: Date): string {
 }
 
 const botonModo = (activo: boolean): React.CSSProperties => ({
-  flex: 1, minHeight: 36, borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer',
-  fontFamily: 'DM Sans, system-ui, sans-serif',
+  flex: 1, minHeight: 36, borderRadius: 12, fontSize: 12, fontWeight: 700, cursor: 'pointer',
   background: activo ? S.surf2 : 'transparent', border: `1px solid ${activo ? S.line2 : 'transparent'}`,
   color: activo ? S.ink : S.dim,
 })
 
 const botonFlecha: React.CSSProperties = {
-  width: 36, height: 36, borderRadius: 10, background: S.surf2, border: `1px solid ${S.line2}`,
-  color: S.ink, fontSize: 16, cursor: 'pointer',
+  width: 36, height: 36, borderRadius: 12, background: S.surf2, border: `1px solid ${S.line2}`,
+  color: S.ink, fontSize: 15, cursor: 'pointer',
 }
 
 /**
@@ -464,7 +461,7 @@ function WeekPlanner() {
   const titulo = offset === 0 ? 'Esta semana' : offset === 1 ? 'Próxima semana' : offset === -1 ? 'Semana pasada' : 'Semana'
 
   return (
-    <div style={{ background: S.surf, borderRadius: 14, padding: '14px 16px', border: `1px solid ${S.line2}` }}>
+    <div style={{ background: S.surf, borderRadius: 16, padding: '14px 16px', border: `1px solid ${S.line2}` }}>
       <div className="flex gap-1" style={{ marginBottom: 12, padding: 3, borderRadius: 12, background: S.bg, border: `1px solid ${S.line}` }}>
         <button onClick={() => setModo('default')} style={botonModo(modo === 'default')}>Por defecto</button>
         <button onClick={() => setModo('semana')} style={botonModo(modo === 'semana')}>Por semana</button>
@@ -510,7 +507,7 @@ function WeekPlanner() {
       {modo === 'semana' && propio && (
         <button
           onClick={() => clearWeekOverride(clave)}
-          style={{ marginTop: 10, width: '100%', minHeight: 40, borderRadius: 10, background: 'none', border: `1px solid ${S.line2}`, color: S.dim, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'DM Sans, system-ui, sans-serif' }}
+          style={{ marginTop: 10, width: '100%', minHeight: 40, borderRadius: 12, background: 'none', border: `1px solid ${S.line2}`, color: S.dim, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
         >
           Volver a la semana por defecto
         </button>
@@ -520,10 +517,9 @@ function WeekPlanner() {
 }
 
 const opcionMenu: React.CSSProperties = {
-  width: '100%', textAlign: 'left', padding: '14px 16px', borderRadius: 14,
+  width: '100%', textAlign: 'left', padding: '14px 16px', borderRadius: 12,
   background: S.surf2, border: `1px solid ${S.line2}`,
-  color: S.ink, fontSize: 14, fontWeight: 600, cursor: 'pointer',
-  fontFamily: 'DM Sans, system-ui, sans-serif',
+  color: S.ink, fontSize: 15, fontWeight: 600, cursor: 'pointer',
 }
 
 /** Una fila del historial: tocar abre el día, mantener apretado abre el menú. */
@@ -544,11 +540,11 @@ function HistoryRow({ workout: w, routines, onOpen, onLongPress }: {
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen() } }}
       {...handlers}
       style={{
-        display: 'flex', alignItems: 'center', gap: 12, background: S.surf, borderRadius: 14, padding: 12,
+        display: 'flex', alignItems: 'center', gap: 12, background: S.surf, borderRadius: 16, padding: 12,
         border: `1px solid ${S.line2}`, cursor: 'pointer', WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none',
       }}
     >
-      <div style={{ borderRadius: 10, padding: '6px 0', textAlign: 'center', flexShrink: 0, width: 44, background: S.surf2 }}>
+      <div style={{ borderRadius: 12, padding: '6px 0', textAlign: 'center', flexShrink: 0, width: 44, background: S.surf2 }}>
         <div className="num" style={{ fontSize: 15, fontWeight: 700, color: S.ink, lineHeight: 1 }}>{date.getDate()}</div>
         <div style={{ fontSize: 11, color: S.dim, marginTop: 2 }}>{MONTH_NAMES[date.getMonth()].slice(0, 3)}</div>
       </div>
@@ -558,7 +554,7 @@ function HistoryRow({ workout: w, routines, onOpen, onLongPress }: {
           <span className="num">{w.exercises.length}</span> ej · <span className="num">{totalSets}</span> series · <span className="num">{w.durationMin ?? 0}</span> min
         </p>
       </div>
-      <span style={{ color: S.faint, fontSize: 18, flexShrink: 0 }} aria-hidden="true">›</span>
+      <span style={{ color: S.mute, fontSize: 17, flexShrink: 0 }} aria-hidden="true">›</span>
     </div>
   )
 }
@@ -602,7 +598,7 @@ function CalendarioTab({ year, month }: { year: number; month: number }) {
   return (
     <div className="flex flex-col gap-3">
       {/* Calendario del mes, con el resumen en una línea arriba */}
-      <div style={{ background: S.surf, borderRadius: 18, padding: '14px 14px', border: `1px solid ${S.line2}` }}>
+      <div style={{ background: S.surf, borderRadius: 16, padding: '14px 14px', border: `1px solid ${S.line2}` }}>
         <p style={{ fontSize: 13, color: S.dim, marginBottom: 12 }}>
           <span className="num" style={{ color: S.ink, fontWeight: 700 }}>{gymDaysCount}</span>
           {planned > 0 ? <> de <span className="num">{planned}</span> planificados</> : ` ${gymDaysCount === 1 ? 'día' : 'días'} de gym`}
@@ -629,7 +625,7 @@ function CalendarioTab({ year, month }: { year: number; month: number }) {
 
       {/* Recent history */}
       <div>
-        <p style={{ fontSize: 12, fontWeight: 600, color: S.dim, marginBottom: 8 }}>Historial reciente <span style={{ fontWeight: 400, color: S.faint }}>· mantené apretado para editar o borrar</span></p>
+        <p style={{ fontSize: 12, fontWeight: 600, color: S.dim, marginBottom: 8 }}>Historial reciente <span style={{ fontWeight: 400, color: S.mute }}>· mantené apretado para editar o borrar</span></p>
         <div className="flex flex-col gap-2">
           {recentWorkouts.map((w) => (
             <HistoryRow key={w.id} workout={w} routines={routines}
@@ -640,7 +636,7 @@ function CalendarioTab({ year, month }: { year: number; month: number }) {
               onLongPress={() => setMenuWorkout(w)}
             />
           ))}
-          {recentWorkouts.length === 0 && <p style={{ color: S.faint, fontSize: 13, textAlign: 'center', padding: '32px 0' }}>Sin historial</p>}
+          {recentWorkouts.length === 0 && <p style={{ color: S.mute, fontSize: 13, textAlign: 'center', padding: '32px 0' }}>Sin historial</p>}
         </div>
       </div>
 
@@ -653,7 +649,7 @@ function CalendarioTab({ year, month }: { year: number; month: number }) {
               style={{ background: S.surf, borderTop: `1px solid ${S.line2}` }}
               onClick={(e) => e.stopPropagation()}>
               <div style={{ width: 40, height: 4, background: S.surf2, borderRadius: 2, margin: '0 auto 16px' }} />
-              <p style={{ fontSize: 16, fontWeight: 700, color: S.ink, marginBottom: 2 }}><RoutineBadge routineId={menuWorkout.routineId} size={16} />{routine?.name ?? 'Entreno'}</p>
+              <p style={{ fontSize: 17, fontWeight: 700, color: S.ink, marginBottom: 2 }}><RoutineBadge routineId={menuWorkout.routineId} size={16} />{routine?.name ?? 'Entreno'}</p>
               <p style={{ fontSize: 12, color: S.dim, marginBottom: 16 }}>
                 {new Date(menuWorkout.startedAt).toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
               </p>
@@ -723,7 +719,7 @@ function RecordsTab() {
 
   return (
     <div className="flex flex-col gap-3">
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: 'rgba(242,169,59,0.08)', border: `1px solid rgba(242,169,59,0.22)`, borderRadius: 18, padding: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: 'rgba(242,169,59,0.08)', border: `1px solid rgba(242,169,59,0.22)`, borderRadius: 16, padding: 16 }}>
         <span style={{ fontSize: 32, lineHeight: 1 }}>🏆</span>
         <div>
           <div style={{ fontSize: 15, fontWeight: 700, color: S.acc2 }}>
@@ -738,7 +734,7 @@ function RecordsTab() {
           <h3 style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700, color: S.ink, margin: '8px 0 0' }}>
             <MuscleIcon group={g} size={20} />
             {muscleGroupConfig[g].label}
-            <span className="num" style={{ fontSize: 11, color: S.faint, fontWeight: 600 }}>{lista.length}</span>
+            <span className="num" style={{ fontSize: 11, color: S.mute, fontWeight: 600 }}>{lista.length}</span>
           </h3>
           {lista.map((pr) => {
             const ex = porId.get(pr.exerciseId)!
@@ -750,13 +746,13 @@ function RecordsTab() {
             const desplegable = hasHistory || conKilos
             const porReps = isExpanded && conKilos ? recordsPorReps(pr.exerciseId, workouts) : []
             return (
-              <div key={pr.exerciseId} style={{ background: S.surf, borderRadius: 14, border: `1px solid ${S.line2}` }}>
+              <div key={pr.exerciseId} style={{ background: S.surf, borderRadius: 16, border: `1px solid ${S.line2}` }}>
                 <button
                   type="button"
                   onClick={() => desplegable && setExpandedPr(isExpanded ? null : pr.exerciseId)}
                   aria-expanded={desplegable ? isExpanded : undefined}
                   className="flex items-center gap-3 w-full text-left"
-                  style={{ padding: '12px 14px', background: 'none', border: 'none', cursor: desplegable ? 'pointer' : 'default', fontFamily: 'inherit', color: 'inherit' }}
+                  style={{ padding: '12px 14px', background: 'none', border: 'none', cursor: desplegable ? 'pointer' : 'default', color: 'inherit' }}
                 >
                   <div className="flex-1 min-w-0">
                     {/* Nombre completo, hasta dos líneas: el punto coral marca lo de los últimos 30 días. */}
@@ -769,9 +765,9 @@ function RecordsTab() {
                     </span>
                     <p style={{ fontSize: 11, color: S.dim, marginTop: 2 }}>{prDate}</p>
                   </div>
-                  <div className="num" style={{ fontSize: 14, fontWeight: 700, color: S.ink, flexShrink: 0, textAlign: 'right' }}>{formatMarca(pr)}</div>
+                  <div className="num" style={{ fontSize: 13, fontWeight: 700, color: S.ink, flexShrink: 0, textAlign: 'right' }}>{formatMarca(pr)}</div>
                   {desplegable && (
-                    <span aria-hidden="true" style={{ color: S.faint, fontSize: 11, flexShrink: 0, width: 14, textAlign: 'center' }}>
+                    <span aria-hidden="true" style={{ color: S.mute, fontSize: 11, flexShrink: 0, width: 14, textAlign: 'center' }}>
                       {isExpanded ? '▲' : '▼'}
                     </span>
                   )}
@@ -780,13 +776,13 @@ function RecordsTab() {
                   <div style={{ padding: '10px 14px 12px', borderTop: `1px solid ${S.line}` }}>
                     {conKilos && (
                       <>
-                        <p style={{ fontSize: 11, fontWeight: 600, color: S.faint, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Mejor peso por repeticiones</p>
+                        <p style={{ fontSize: 11, fontWeight: 600, color: S.mute, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Mejor peso por repeticiones</p>
                         <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', columnGap: 12, rowGap: 6, marginBottom: hasHistory ? 14 : 0 }}>
                           {porReps.map((r, i) => (
                             <div key={i} style={{ display: 'contents' }}>
                               <span className="num" style={{ fontSize: 12, color: S.dim }}>{REPS_TABLA[i]} reps</span>
-                              <span className="num" style={{ fontSize: 12, fontWeight: 700, color: r ? S.ink : S.faint, textAlign: 'right' }}>{r ? `${formatKg(r.kg)} kg` : '—'}</span>
-                              <span style={{ fontSize: 11, color: S.faint, minWidth: 54, textAlign: 'right' }}>
+                              <span className="num" style={{ fontSize: 12, fontWeight: 700, color: r ? S.ink : S.mute, textAlign: 'right' }}>{r ? `${formatKg(r.kg)} kg` : '—'}</span>
+                              <span style={{ fontSize: 11, color: S.mute, minWidth: 54, textAlign: 'right' }}>
                                 {r ? new Date(r.date).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' }) : ''}
                               </span>
                             </div>
@@ -796,7 +792,7 @@ function RecordsTab() {
                     )}
                     {hasHistory && (
                       <>
-                        <p style={{ fontSize: 11, fontWeight: 600, color: S.faint, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Historial</p>
+                        <p style={{ fontSize: 11, fontWeight: 600, color: S.mute, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Historial</p>
                         <div className="flex flex-col gap-1.5">
                           {[...pr.history!].reverse().map((h, hi) => (
                             <div key={hi} className="flex items-center justify-between">
@@ -814,7 +810,7 @@ function RecordsTab() {
           })}
         </section>
       ))}
-      {prs.length === 0 && <p style={{ color: S.faint, fontSize: 13, textAlign: 'center', padding: '32px 0' }}>No hay récords aún. ¡A entrenar!</p>}
+      {prs.length === 0 && <p style={{ color: S.mute, fontSize: 13, textAlign: 'center', padding: '32px 0' }}>No hay récords aún. ¡A entrenar!</p>}
     </div>
   )
 }
@@ -838,21 +834,21 @@ export function CalendarioScreen() {
         {enCalendario ? (
           <div className="flex items-center justify-between">
             <button onClick={() => setViewDate(new Date(year, month - 1, 1))} aria-label="Mes anterior"
-              style={{ width: 36, height: 36, borderRadius: 12, background: S.surf2, border: `1px solid ${S.line2}`, color: S.dim, fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>‹</button>
-            <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: -0.5, color: S.ink, textAlign: 'center' }}>
+              style={{ width: 36, height: 36, borderRadius: 12, background: S.surf2, border: `1px solid ${S.line2}`, color: S.dim, fontSize: 17, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>‹</button>
+            <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: -0.5, color: S.ink, textAlign: 'center' }}>
               {MONTH_NAMES[month]} <span style={{ color: S.dim, fontWeight: 600 }}>{year}</span>
             </div>
             <button onClick={() => { if (!isCurrentMonth) setViewDate(new Date(year, month + 1, 1)) }} disabled={isCurrentMonth} aria-label="Mes siguiente"
-              style={{ width: 36, height: 36, borderRadius: 12, background: S.surf2, border: `1px solid ${S.line2}`, color: isCurrentMonth ? S.faint : S.dim, fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isCurrentMonth ? 'default' : 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>›</button>
+              style={{ width: 36, height: 36, borderRadius: 12, background: S.surf2, border: `1px solid ${S.line2}`, color: isCurrentMonth ? S.faint : S.dim, fontSize: 17, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isCurrentMonth ? 'default' : 'pointer', flexShrink: 0 }}>›</button>
           </div>
         ) : (
-          <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: -0.5, color: S.ink, textAlign: 'center' }}>Récords</div>
+          <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: -0.5, color: S.ink, textAlign: 'center' }}>Récords</div>
         )}
 
-        <div style={{ display: 'flex', background: S.surf, borderRadius: 14, padding: 3, border: `1px solid ${S.line2}`, marginTop: 16 }}>
+        <div style={{ display: 'flex', background: S.surf, borderRadius: 16, padding: 3, border: `1px solid ${S.line2}`, marginTop: 16 }}>
           {([['calendario', '📅 Calendario'], ['records', '🏆 Récords']] as [CalendarSubTab, string][]).map(([id, label]) => (
             <button key={id} onClick={() => setCalendarSubTab(id)}
-              style={{ flex: 1, padding: '9px 0', borderRadius: 11, border: 'none', fontFamily: 'DM Sans, system-ui, sans-serif', fontSize: 13, fontWeight: 600, cursor: 'pointer', background: calendarSubTab === id ? S.surf2 : 'transparent', color: calendarSubTab === id ? S.ink : S.dim, transition: 'all 0.15s ease-out' }}>
+              style={{ flex: 1, padding: '9px 0', borderRadius: 12, border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', background: calendarSubTab === id ? S.surf2 : 'transparent', color: calendarSubTab === id ? S.ink : S.dim, transition: 'all 0.15s ease-out' }}>
               {label}
             </button>
           ))}

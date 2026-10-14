@@ -7,6 +7,7 @@ import { CreateExerciseCard } from '../components/CreateExerciseCard'
 import { getExerciseSuggestion } from '../utils/aiCoach'
 import type { MuscleGroup, Exercise } from '../types'
 import { MuscleIcon } from '../components/MuscleIcon'
+import { S } from '../theme'
 
 interface Props {
   routineName: string
@@ -122,7 +123,7 @@ export function ExercisePickerScreen({ routineName }: Props) {
             </svg>
           </button>
           <div>
-            <h1 className="text-base font-bold text-white">Elegir ejercicio</h1>
+            <h1 className="text-base font-bold text-ink">Elegir ejercicio</h1>
             <p className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>{routineName}</p>
           </div>
           <div
@@ -134,7 +135,7 @@ export function ExercisePickerScreen({ routineName }: Props) {
               className="px-3 py-1.5 text-xs font-semibold transition-colors"
               style={mode === 'browse' ? {
                 background: 'rgba(232,99,74,0.15)',
-                color: 'var(--primary)',
+                color: 'var(--acc)',
               } : { color: 'rgba(255,255,255,0.3)' }}
             >
               Grupos
@@ -144,7 +145,7 @@ export function ExercisePickerScreen({ routineName }: Props) {
               className="px-3 py-1.5 text-xs font-semibold transition-colors"
               style={mode === 'search' ? {
                 background: 'rgba(232,99,74,0.15)',
-                color: 'var(--primary)',
+                color: 'var(--acc)',
               } : { color: 'rgba(255,255,255,0.3)' }}
             >
               Buscar
@@ -161,7 +162,7 @@ export function ExercisePickerScreen({ routineName }: Props) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               autoFocus
-              className="w-full rounded-xl py-2.5 pl-9 pr-4 text-white text-sm focus:outline-none"
+              className="w-full rounded-xl py-2.5 pl-9 pr-4 text-ink text-sm"
               style={{
                 background: 'rgba(255,255,255,0.06)',
                 border: '1px solid rgba(255,255,255,0.08)',
@@ -178,13 +179,13 @@ export function ExercisePickerScreen({ routineName }: Props) {
             <div className="rounded-2xl p-3 flex items-center gap-3" style={{ background: 'rgba(232,99,74,0.08)', border: '1px solid rgba(232,99,74,0.22)' }}>
               <span className="text-xl flex-shrink-0">🤖</span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white truncate">{aiSuggestion.exercise.nameEs}</p>
+                <p className="text-sm font-semibold text-ink truncate">{aiSuggestion.exercise.nameEs}</p>
                 <p className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>{aiSuggestion.reason}</p>
               </div>
               <button
                 onClick={() => { handleAdd(aiSuggestion.exercise.id); setAiSuggestion(null) }}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold text-black flex-shrink-0"
-                style={{ background: 'var(--primary)' }}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold text-on-acc flex-shrink-0"
+                style={{ background: 'var(--acc)' }}
               >
                 + Agregar
               </button>
@@ -194,7 +195,7 @@ export function ExercisePickerScreen({ routineName }: Props) {
               onClick={handleAiSuggest}
               disabled={aiLoading}
               className="w-full rounded-2xl p-3 flex items-center justify-center gap-2 text-sm font-semibold"
-              style={{ background: 'rgba(232,99,74,0.08)', border: '1px solid rgba(232,99,74,0.22)', color: 'var(--primary)' }}
+              style={{ background: 'rgba(232,99,74,0.08)', border: '1px solid rgba(232,99,74,0.22)', color: 'var(--acc)' }}
             >
               🤖 {aiLoading ? 'Pensando...' : aiError ? 'No se pudo sugerir, reintentar' : 'Sugerir ejercicio con IA'}
             </button>
@@ -208,7 +209,7 @@ export function ExercisePickerScreen({ routineName }: Props) {
           <button
             onClick={() => setSelectedGroup(null)}
             className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-              !selectedGroup ? 'bg-primary/20 text-primary border-primary/40' : 'bg-surface text-gray-500 border-border'
+              !selectedGroup ? 'bg-primary/20 text-primary border-primary/40' : 'bg-surface text-dim border-border'
             }`}
           >
             Todos
@@ -222,12 +223,12 @@ export function ExercisePickerScreen({ routineName }: Props) {
                 onClick={() => setSelectedGroup(isSelected ? null : mg)}
                 className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all inline-flex items-center gap-1"
                 style={{
-                  backgroundColor: isSelected ? cfg.color + '25' : '#13131c',
-                  borderColor: isSelected ? cfg.color + '60' : '#1e1e2a',
-                  color: isSelected ? cfg.color : '#6b7280',
+                  backgroundColor: isSelected ? cfg.color + '25' : S.surf,
+                  borderColor: isSelected ? cfg.color + '60' : S.line2,
+                  color: isSelected ? cfg.color : S.mute,
                 }}
               >
-                <MuscleIcon group={mg} size={20} color={isSelected ? cfg.color : '#6b7280'} /> {cfg.label}
+                <MuscleIcon group={mg} size={20} color={isSelected ? cfg.color : S.mute} /> {cfg.label}
               </button>
             )
           })}
@@ -257,7 +258,7 @@ export function ExercisePickerScreen({ routineName }: Props) {
             ))}
             {searchFiltered.length === 0 && search && !canCreate && (
               <div className="text-center py-8">
-                <p className="text-gray-500 text-sm">Sin resultados para "{search}"</p>
+                <p className="text-dim text-sm">Sin resultados para "{search}"</p>
               </div>
             )}
           </div>
@@ -267,9 +268,9 @@ export function ExercisePickerScreen({ routineName }: Props) {
               <div key={group}>
                 <div className="flex items-center gap-2 mb-2">
                   <MuscleIcon group={group} size={26} />
-                  <h3 className="font-bold text-sm text-white">{config.label}</h3>
+                  <h3 className="font-bold text-sm text-ink">{config.label}</h3>
                   <span
-                    className="text-[11px] px-1.5 py-0.5 rounded font-medium"
+                    className="text-micro px-1.5 py-0.5 rounded font-medium"
                     style={{ color: config.color, backgroundColor: config.color + '15' }}
                   >
                     {exs.length}
@@ -327,7 +328,7 @@ function ExerciseRow({
       >
         <ExerciseThumbnail exercise={exercise} size={44} />
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-white text-sm truncate">{exercise.nameEs}</p>
+          <p className="font-semibold text-ink text-sm truncate">{exercise.nameEs}</p>
           <p className="text-xs mt-0.5 truncate" style={{ color: 'rgba(255,255,255,0.3)' }}>{exercise.primaryMuscles.join(', ')}</p>
         </div>
       </button>
@@ -338,7 +339,7 @@ function ExerciseRow({
         className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all font-bold text-lg"
         style={isAdded ? {
           background: 'rgba(232,99,74,0.15)',
-          color: 'var(--primary)',
+          color: 'var(--acc)',
           border: '1px solid rgba(232,99,74,0.3)',
         } : {
           background: 'rgba(255,255,255,0.06)',
