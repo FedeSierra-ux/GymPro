@@ -3,7 +3,7 @@ import { useStore, useAllExercises } from '../store/useStore'
 import { useWorkoutStore } from '../stores/workoutStore'
 import { BackupReminder } from '../components/BackupReminder'
 import { getWorkoutStreak } from '../utils/streak'
-import { plannedDowSet, dayKey } from '../utils/trainingDays'
+import { plannedDowSet, dayKey, inicioDeFaltas } from '../utils/trainingDays'
 import { planDeSemana } from '../utils/weekPlan'
 import { prediccionDelPlan } from '../utils/planOrder'
 import { haceCuanto } from '../utils/relativeDate'
@@ -23,7 +23,7 @@ function formatDate() {
 }
 
 export function HomeScreen() {
-  const { userName, avatarPhoto, workouts, routines, prs, weekPlan: planBase, weekOverrides, weeklyGoal, setActiveTab, openAgendaDay, getArchivedRoutineName } = useStore()
+  const { userName, avatarPhoto, workouts, routines, prs, weekPlan: planBase, weekOverrides, weeklyGoal, setActiveTab, openAgendaDay, getArchivedRoutineName, inicioUso } = useStore()
   const allExercises = useAllExercises()
   const startWorkout = useWorkoutStore((s) => s.startWorkout)
 
@@ -48,9 +48,12 @@ export function HomeScreen() {
   const hoyIdx = (hoy.getDay() + 6) % 7
   const lunes = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - hoyIdx)
   const diasEntrenados = new Set(finishedWorkouts.map(w => dayKey(w.startedAt)))
+  // Los días anteriores a empezar a usar la app no son faltas ni cuentan para la meta.
+  const desde = inicioDeFaltas(inicioUso, finishedWorkouts)
   const semana = DIAS.map((letra, i) => {
     const fecha = new Date(lunes.getFullYear(), lunes.getMonth(), lunes.getDate() + i)
-    const rutinaPlan = weekPlan[i] && routines.some(r => r.id === weekPlan[i]) ? weekPlan[i] : null
+    const antesDeEmpezar = desde != null && fecha.getTime() < desde
+    const rutinaPlan = !antesDeEmpezar && weekPlan[i] && routines.some(r => r.id === weekPlan[i]) ? weekPlan[i] : null
     return {
       letra,
       hecho: diasEntrenados.has(dayKey(fecha.getTime())),

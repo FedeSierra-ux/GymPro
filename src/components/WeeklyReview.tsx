@@ -1,7 +1,7 @@
 import { useHoy } from '../utils/useHoy'
 import { useStore } from '../store/useStore'
 import { lunesDe } from '../utils/program'
-import { dayKey, plannedDowSet } from '../utils/trainingDays'
+import { dayKey, inicioDeFaltas, plannedDowSet } from '../utils/trainingDays'
 import { planDeSemana } from '../utils/weekPlan'
 import { seriesEfectivas } from '../utils/volume'
 
@@ -10,7 +10,7 @@ import { seriesEfectivas } from '../utils/volume'
  * el lunes siguiente. Si la semana pasada no hubo entrenos, no se muestra.
  */
 export function WeeklyReview() {
-  const { workouts, prs, weekPlan, weekOverrides, routines, repasoCerrado, cerrarRepaso, weeklyGoal } = useStore()
+  const { workouts, prs, weekPlan, weekOverrides, routines, repasoCerrado, cerrarRepaso, weeklyGoal, inicioUso } = useStore()
   const nowTs = useHoy()
   const lunes = lunesDe(nowTs)
   const clave = dayKey(lunes)
@@ -21,7 +21,10 @@ export function WeeklyReview() {
   const semana = workouts.filter((w) => w.finishedAt && w.startedAt >= lunesPasado && w.startedAt < lunes)
   if (!semana.length) return null
 
-  const planificados = weeklyGoal ?? plannedDowSet(planDeSemana(weekPlan, weekOverrides, lunesPasado), routines.map((r) => r.id)).size
+  // Si la app se empezó a usar en el medio de esa semana, cuentan sólo los días desde entonces.
+  const desde = inicioDeFaltas(inicioUso, workouts) ?? lunesPasado
+  const planificados = weeklyGoal ?? [...plannedDowSet(planDeSemana(weekPlan, weekOverrides, lunesPasado), routines.map((r) => r.id))]
+    .filter((dow) => new Date(l.getFullYear(), l.getMonth(), l.getDate() - 7 + dow).getTime() >= desde).length
   // Días entrenados, no entrenos: dos sesiones el mismo día daban "4 de 3".
   const diasEntrenados = new Set(semana.map((w) => dayKey(w.startedAt))).size
   const series = seriesEfectivas(semana)

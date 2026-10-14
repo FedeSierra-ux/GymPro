@@ -11,7 +11,7 @@ import { computeRecords } from '../utils/records'
 import { conColores } from '../utils/trainingDays'
 import { tieneVariante } from '../utils/routineVariant'
 import type { WeekOverrides } from '../utils/weekPlan'
-import { faseDeSemana, inicioParaSemana, semanaDelPrograma, SEMANAS_PROGRAMA, type ProgramaEstado } from '../utils/program'
+import { faseDeSemana, finDeCiclo, inicioParaSemana, lunesDe, semanaDelPrograma, SEMANAS_PROGRAMA, type CicloPrograma, type ProgramaEstado } from '../utils/program'
 import { alFallarEscritura, createSafeStorage } from '../utils/safeStorage'
 
 interface AppState {
@@ -57,6 +57,13 @@ interface AppState {
   terminarPrograma: () => void
   /** Vuelve a preguntar en qué semana del plan estás (después de haberlo terminado). */
   retomarPrograma: () => void
+  /** Ciclos del plan ya cerrados, del más viejo al más nuevo (para los informes de ciclos pasados). */
+  ciclosPrograma: CicloPrograma[]
+  /**
+   * Día (00:00) en que se empezó a usar la app. Antes de esa fecha no hay
+   * faltas: el plan no se podía cumplir en una app que no estaba instalada.
+   */
+  inicioUso: number | null
   /** Las rutinas de Mile ya se completaron con bloques y semanas 4-6: no se vuelve a hacer. */
   planMileCompletado: boolean
   /** Lunes (dayKey) de la semana cuyo repaso ya se cerró en Inicio. */
@@ -148,7 +155,7 @@ export const STORAGE_KEY = 'gympro-storage-v2'
  * Versión del formato guardado. Sube cuando cambia la forma de los datos, y
  * `migrarEstado` lleva lo viejo a lo nuevo (también al importar un backup).
  */
-export const STORAGE_VERSION = 1
+export const STORAGE_VERSION = 2
 
 function partialize(state: AppState) {
   return {
@@ -169,12 +176,30 @@ function partialize(state: AppState) {
     avatarPhoto: state.avatarPhoto,
     archivedRoutineNames: state.archivedRoutineNames,
     programa: state.programa,
+    ciclosPrograma: state.ciclosPrograma,
+    inicioUso: state.inicioUso,
     repasoCerrado: state.repasoCerrado,
     planMileCompletado: state.planMileCompletado,
   }
 }
 
 export type PersistedState = ReturnType<typeof partialize>
+
+function inicioDelDia(ts: number): number {
+  const d = new Date(ts)
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+}
+
+/**
+ * Agrega a la lista el ciclo que empezó en `inicio` y termina en `fin`, si
+ * duró al menos dos semanas, tiene algún entreno adentro y no estaba ya.
+ */
+function archivarCiclo(ciclos: CicloPrograma[], workouts: Workout[], inicio: number, fin: number): CicloPrograma[] {
+  // Menos de dos semanas no es un ciclo: es haber corregido en qué semana estabas.
+  if (fin - inicio < 13 * 86400000 || ciclos.some((c) => c.inicio === inicio)) return ciclos
+  const tieneEntrenos = workouts.some((w) => w.finishedAt && w.startedAt >= inicio && w.startedAt < fin)
+  return tieneEntrenos ? [...ciclos, { inicio, fin }] : ciclos
+}
 
 /** La semana tipo de Mile que se guardó entre fines de agosto y principios de octubre: martes, jueves y sábado. */
 const MILE_WEEK_PLAN_VIEJO: Record<string, string> = { 1: 'mile-piernas', 3: 'mile-brazos', 5: 'mile-fullbody' }
@@ -208,6 +233,23 @@ export function migrarEstado(persisted: unknown, version: number): Record<string
       if (esElViejo) state.weekPlan = { ...MILE_WEEK_PLAN }
     }
   }
+  if (version < 2) {
+    const workouts = Array.isArray(state.workouts) ? (state.workouts as Workout[]) : []
+    // Los cargados a mano desde la Agenda quedaban a las 12:00:00.000 exactas:
+    // es la única marca que dejaron, y alcanza para no usarlos de horario.
+    if (Array.isArray(state.workouts)) state.workouts = workouts.map((w) => {
+      if (w?.origen || typeof w?.startedAt !== 'number') return w
+      const d = new Date(w.startedAt)
+      const aMano = d.getHours() === 12 && d.getMinutes() === 0 && d.getSeconds() === 0 && d.getMilliseconds() === 0
+      return aMano ? { ...w, origen: 'manual' as const } : w
+    })
+    // Quien ya venía usando la app empezó, como tarde, con su primer entreno.
+    if (typeof state.inicioUso !== 'number') {
+      const primero = workouts.reduce((min, w) => (typeof w?.startedAt === 'number' && w.startedAt < min ? w.startedAt : min), Infinity)
+      state.inicioUso = Number.isFinite(primero) ? inicioDelDia(primero) : null
+    }
+    if (!Array.isArray(state.ciclosPrograma)) state.ciclosPrograma = []
+  }
   return state
 }
 
@@ -238,6 +280,8 @@ export const useStore = create<AppState>()(
       avatarPhoto: null,
       archivedRoutineNames: {},
       programa: null,
+      ciclosPrograma: [],
+      inicioUso: null,
       repasoCerrado: null,
       planMileCompletado: false,
 
@@ -346,7 +390,7 @@ export const useStore = create<AppState>()(
         set((s) => ({ exerciseTips: { ...s.exerciseTips, [exerciseId]: tip } })),
 
       updateUserName: (name) => set({ userName: name }),
-      setOnboarded: () => set({ onboarded: true }),
+      setOnboarded: () => set((s) => ({ onboarded: true, inicioUso: s.inicioUso ?? inicioDelDia(Date.now()) })),
       setAnthropicApiKey: (key) => set({ anthropicApiKey: key }),
       addToast: (message, type) =>
         set((s) => ({
@@ -387,10 +431,18 @@ export const useStore = create<AppState>()(
       fijarSemanaPrograma: (semana) => {
         const nowTs = Date.now()
         const fase = faseDeSemana(semana)
-        set((s) => ({
-          programa: { inicio: inicioParaSemana(semana, nowTs), fase },
-          routines: s.routines.map((r) => (tieneVariante(r) ? { ...r, variante: fase } : r)),
-        }))
+        set((s) => {
+          const inicio = inicioParaSemana(semana, nowTs)
+          // El ciclo que se reemplaza queda guardado hasta donde llegó.
+          const ciclosPrograma = s.programa && !s.programa.terminado && s.programa.inicio !== inicio
+            ? archivarCiclo(s.ciclosPrograma, s.workouts, s.programa.inicio, Math.min(inicio, finDeCiclo(s.programa.inicio), lunesDe(nowTs) + 7 * 86400000))
+            : s.ciclosPrograma
+          return {
+            programa: { inicio, fase },
+            ciclosPrograma,
+            routines: s.routines.map((r) => (tieneVariante(r) ? { ...r, variante: fase } : r)),
+          }
+        })
       },
 
       sincronizarPrograma: () => {
@@ -415,6 +467,10 @@ export const useStore = create<AppState>()(
         set((s) => (s.programa
           ? {
               programa: { ...s.programa, terminado: true, fase: 'base' },
+              ciclosPrograma: archivarCiclo(
+                s.ciclosPrograma, s.workouts, s.programa.inicio,
+                Math.min(finDeCiclo(s.programa.inicio), lunesDe(Date.now()) + 7 * 86400000),
+              ),
               // Sin plan en curso, las rutinas vuelven a las series de base:
               // quedaban trabadas en Semanas 4-6.
               routines: s.routines.map((r) => (tieneVariante(r) ? { ...r, variante: 'base' } : r)),

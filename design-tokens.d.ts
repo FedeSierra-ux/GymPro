@@ -4,8 +4,10 @@ export declare const colors: {
   surf2: string
   ink: string
   dim: string
+  mute: string
   faint: string
   acc: string
+  onAcc: string
   accDim: string
   acc2: string
   good: string

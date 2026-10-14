@@ -24,7 +24,7 @@ interface DayCell {
  * lee de un vistazo qué días se fue y si se están alternando bien las rutinas.
  */
 export function MonthCalendar({
-  year, month, workouts, routines, onSelectDay, weekPlan, weekOverrides, planPorDia,
+  year, month, workouts, routines, onSelectDay, weekPlan, weekOverrides, planPorDia, desde,
 }: {
   year: number
   month: number
@@ -43,6 +43,8 @@ export function MonthCalendar({
    * rutinas se corren).
    */
   planPorDia?: Map<string, string>
+  /** Antes de este día (el que se empezó a usar la app) no se marcan días planificados. */
+  desde?: number | null
 }) {
   // Una sola lectura del reloj por montaje: el render tiene que ser puro.
   const nowTs = useHoy()
@@ -105,7 +107,8 @@ export function MonthCalendar({
               const rutinaPlan = planPorDia && rutinaSemana && (cell.isFuture || cell.isToday)
                 ? planPorDia.get(cell.key) ?? rutinaSemana
                 : rutinaSemana
-              const planned = !entrenado && rutinaPlan != null
+              const antesDeEmpezar = desde != null && cell.ts < desde
+              const planned = !entrenado && rutinaPlan != null && !antesDeEmpezar
               const pasado = !cell.isFuture && !cell.isToday
               const aro = planned ? routineColor(rutinaPlan, routines) : null
               const nombreRutina = cell.routineId

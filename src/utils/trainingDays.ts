@@ -112,6 +112,20 @@ export function plannedDowSet(weekPlan: Record<number, string | null>, routineId
   )
 }
 
+/**
+ * Desde qué día (00:00) cuentan las faltas: el día en que se empezó a usar la
+ * app, o el primer entreno si se cargó alguno de antes. Sin esto, la primera
+ * semana decía "1 de 6 planificados" por días en que la app no existía.
+ * null = no se sabe: se cuenta todo, como antes.
+ */
+export function inicioDeFaltas(inicioUso: number | null, workouts: Workout[]): number | null {
+  const primero = workouts.reduce((min, w) => (w.finishedAt && w.startedAt < min ? w.startedAt : min), Infinity)
+  const desde = Math.min(inicioUso ?? Infinity, primero)
+  if (!Number.isFinite(desde)) return null
+  const d = new Date(desde)
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+}
+
 /** Las mismas cuentas que muestra la grilla, para el encabezado de la pantalla. */
 export function monthStats(
   workouts: Workout[],

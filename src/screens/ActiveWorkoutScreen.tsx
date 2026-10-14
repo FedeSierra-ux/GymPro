@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { Dialog } from '../components/Dialog'
 import { useStore, useAllExercises } from '../store/useStore'
-import { useWorkoutStore } from '../stores/workoutStore'
+import { seriesCargadas, useWorkoutStore } from '../stores/workoutStore'
 import { muscleGroupConfig } from '../data/muscleGroups'
 import { RestTimerOverlay } from './RestTimerOverlay'
 import { useRestTimerTick } from '../utils/useRestTimerTick'
@@ -869,41 +869,81 @@ export function ActiveWorkoutScreen() {
       <div aria-live="assertive" className="sr-only">{avisoDescanso}</div>
       {panelDescanso && <RestTimerOverlay onMinimize={() => setMinimizadoPara(activeWorkout.restEndsAt)} />}
 
-      {/* Confirm modal */}
-      {confirmAction && (
-        <div className="absolute inset-0 flex items-center justify-center z-50 px-6" style={{ background: 'rgba(0,0,0,0.8)' }}>
-          <Dialog label={confirmAction === 'finish' ? 'Terminar entreno' : 'Cancelar entreno'} onClose={() => setConfirmAction(null)} style={{ background: S.surf, border: `1px solid ${S.line2}`, borderRadius: 20, padding: 24, width: '100%', maxWidth: 360 }}>
-            <h3 style={{ color: S.ink, fontWeight: 700, fontSize: 17, marginBottom: 8 }}>
-              {confirmAction === 'finish' ? '¿Terminar entreno?' : '¿Cancelar entreno?'}
-            </h3>
-            {confirmAction === 'cancel' && (
-              <p style={{ color: S.dim, fontSize: 13, marginBottom: 16 }}>Se perderá todo el progreso de esta sesión.</p>
-            )}
-            {confirmAction === 'finish' && totalSets - completedSets > 0 && (
-              <p style={{ color: S.dim, fontSize: 13, marginBottom: 16 }}>
-                {totalSets - completedSets === 1
-                  ? 'Queda 1 serie sin tildar: no se guarda. Si la hiciste, volvé y tildala.'
-                  : `Quedan ${totalSets - completedSets} series sin tildar: no se guardan. Si las hiciste, volvé y tildalas.`}
-              </p>
-            )}
-            <div className="flex gap-3" style={{ marginTop: 16 }}>
-              <button onClick={() => setConfirmAction(null)}
-                style={{ flex: 1, padding: '12px 0', borderRadius: 14, border: `1px solid ${S.line2}`, color: S.dim, fontSize: 14, fontWeight: 600, background: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-                Volver
-              </button>
-              <button
-                onClick={() => { setConfirmAction(null); if (confirmAction === 'finish') finishWorkout(); else cancelWorkout() }}
-                style={{
-                  flex: 1, padding: '12px 0', borderRadius: 14, border: 'none', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
-                  background: confirmAction === 'finish' ? S.acc : 'rgba(239,68,68,0.15)',
-                  color: confirmAction === 'finish' ? '#fff' : '#f87171',
-                }}>
-                {confirmAction === 'finish' ? '✓ Terminar' : '✕ Cancelar'}
-              </button>
-            </div>
-          </Dialog>
-        </div>
-      )}
+      {/* Confirmar terminar o cancelar */}
+      {confirmAction && (() => {
+        const terminar = confirmAction === 'finish'
+        // Lo cargado sin tildar se puede guardar igual: es la última serie que
+        // uno hizo y se olvidó de confirmar (antes se perdía, y el récord con ella).
+        const cargadas = terminar ? seriesCargadas(activeWorkout, exercises) : []
+        const sinHacer = activeWorkout.exercises
+          .filter((ex, i) => !ex.sets.some((st) => st.completed) && !cargadas.some((c) => c.exIdx === i))
+          .map((ex) => exercises.find((e) => e.id === ex.exerciseId)?.nameEs ?? 'Ejercicio')
+        const nombres = sinHacer.length <= 2
+          ? sinHacer.join(' y ')
+          : `${sinHacer.slice(0, 2).join(', ')} y ${sinHacer.length - 2} más`
+        const boton = { padding: '13px 0', borderRadius: 14, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', width: '100%' } as const
+        return (
+          <div className="absolute inset-0 flex items-center justify-center z-50 px-6" style={{ background: 'rgba(0,0,0,0.8)' }}>
+            <Dialog label={terminar ? 'Terminar entreno' : 'Cancelar entreno'} onClose={() => setConfirmAction(null)} style={{ background: S.surf, border: `1px solid ${S.line2}`, borderRadius: 20, padding: 24, width: '100%', maxWidth: 360 }}>
+              <h3 style={{ color: S.ink, fontWeight: 700, fontSize: 17, marginBottom: 8 }}>
+                {terminar ? '¿Terminar entreno?' : '¿Cancelar entreno?'}
+              </h3>
+              {!terminar && (
+                <p style={{ color: S.dim, fontSize: 13 }}>Se perderá todo el progreso de esta sesión.</p>
+              )}
+              {terminar && (
+                <div className="flex flex-col" style={{ gap: 6, color: S.dim, fontSize: 13, lineHeight: 1.45 }}>
+                  <p>
+                    Hiciste <b className="num" style={{ color: S.ink }}>{completedSets}</b> de <span className="num">{totalSets}</span> series.
+                  </p>
+                  {cargadas.length > 0 && (
+                    <p style={{ color: S.ink }}>
+                      {cargadas.length === 1
+                        ? '1 serie tiene datos cargados sin tildar.'
+                        : `${cargadas.length} series tienen datos cargados sin tildar.`}
+                    </p>
+                  )}
+                  {sinHacer.length > 0 && (
+                    <p>
+                      {sinHacer.length === 1 ? 'Te falta 1 ejercicio' : `Te faltan ${sinHacer.length} ejercicios`}: {nombres}.
+                    </p>
+                  )}
+                </div>
+              )}
+              <div className="flex flex-col" style={{ gap: 8, marginTop: 18 }}>
+                {terminar && cargadas.length > 0 ? (
+                  <>
+                    <button onClick={() => { setConfirmAction(null); finishWorkout({ incluirCargadas: true }) }}
+                      style={{ ...boton, border: 'none', fontWeight: 700, background: S.acc, color: S.onAcc }}>
+                      Guardar también {cargadas.length === 1 ? 'esa' : 'esas'}
+                    </button>
+                    {completedSets > 0 && (
+                      <button onClick={() => { setConfirmAction(null); finishWorkout() }}
+                        style={{ ...boton, fontWeight: 600, background: 'none', border: `1px solid ${S.line2}`, color: S.ink }}>
+                        Terminar sin {cargadas.length === 1 ? 'ella' : 'ellas'}
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <button
+                    onClick={() => { setConfirmAction(null); if (terminar) finishWorkout(); else cancelWorkout() }}
+                    style={{
+                      ...boton, border: 'none', fontWeight: 700,
+                      background: terminar ? S.acc : 'rgba(248,113,113,0.15)',
+                      color: terminar ? S.onAcc : S.bad,
+                    }}>
+                    {terminar ? 'Terminar' : 'Cancelar entreno'}
+                  </button>
+                )}
+                <button onClick={() => setConfirmAction(null)}
+                  style={{ ...boton, fontWeight: 600, background: 'none', border: 'none', color: S.dim }}>
+                  {terminar ? 'Seguir entrenando' : 'Volver'}
+                </button>
+              </div>
+            </Dialog>
+          </div>
+        )
+      })()}
 
       {modalExercise && <ExerciseModal exercise={modalExercise} onClose={() => setModalExercise(null)} />}
     </div>

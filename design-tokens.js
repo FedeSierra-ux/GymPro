@@ -13,8 +13,14 @@ export const colors = {
   surf2: '#1C1F2A',
   ink: '#ECEEF4',
   dim: '#8A91A3',
+  // Tercer nivel de texto (etiquetas, encabezados de tabla, ayudas): 4,3:1 a
+  // 5,1:1 según el fondo. `faint` queda sólo para trazos y cosas deshabilitadas:
+  // como texto daba 1,6:1 y no se leía.
+  mute: '#7C8396',
   faint: '#3B3F4E',
   acc: '#E8634A',
+  // Texto sobre coral: oscuro en todos los botones (5,8:1). El blanco daba 3,3:1.
+  onAcc: '#0C0E14',
   accDim: '#d4553e',
   acc2: '#F2A93B',
   good: '#34D399',

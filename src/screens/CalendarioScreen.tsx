@@ -17,7 +17,7 @@ import { MuscleIcon } from '../components/MuscleIcon'
 import { RoutineBadge, RoutineIcon } from '../components/RoutineIcon'
 import { MonthCalendar } from '../components/MonthCalendar'
 import { useLongPress } from '../utils/useLongPress'
-import { monthStats, plannedDowSet, routineColor } from '../utils/trainingDays'
+import { inicioDeFaltas, monthStats, plannedDowSet, routineColor } from '../utils/trainingDays'
 import type { CalendarSubTab, MuscleGroup, Routine, Workout } from '../types'
 import { S } from '../theme'
 
@@ -564,7 +564,7 @@ function HistoryRow({ workout: w, routines, onOpen, onLongPress }: {
 }
 
 function CalendarioTab({ year, month }: { year: number; month: number }) {
-  const { workouts, routines, weekPlan, weekOverrides, deleteWorkout, restoreWorkout, addUndoToast, getArchivedRoutineName } = useStore()
+  const { workouts, routines, weekPlan, weekOverrides, deleteWorkout, restoreWorkout, addUndoToast, getArchivedRoutineName, inicioUso } = useStore()
   const startWorkout = useWorkoutStore((s) => s.startWorkout)
   const agendaDayTs = useStore((s) => s.agendaDayTs)
   const clearAgendaDay = useStore((s) => s.clearAgendaDay)
@@ -588,7 +588,9 @@ function CalendarioTab({ year, month }: { year: number; month: number }) {
   const nowTs = useHoy()
   const finishedWorkouts = workouts.filter(w => w.finishedAt)
   const routineIdsVivos = routines.map(r => r.id)
-  const plannedDows = (d: Date) => plannedDowSet(planDeSemana(weekPlan, weekOverrides, d.getTime()), routineIdsVivos).has((d.getDay() + 6) % 7)
+  // Los días anteriores a empezar a usar la app no son faltas.
+  const desde = inicioDeFaltas(inicioUso, finishedWorkouts)
+  const plannedDows = (d: Date) => (desde == null || d.getTime() >= desde) && plannedDowSet(planDeSemana(weekPlan, weekOverrides, d.getTime()), routineIdsVivos).has((d.getDay() + 6) % 7)
   // Se mide contra los días que la semana tipo pedía entrenar, no contra los 31
   // del mes: ir tres veces por semana es cumplir el plan.
   const { trained: gymDaysCount, planned } = monthStats(finishedWorkouts, year, month, nowTs, plannedDows)
@@ -614,6 +616,7 @@ function CalendarioTab({ year, month }: { year: number; month: number }) {
           weekPlan={weekPlan}
           weekOverrides={weekOverrides}
           planPorDia={planPorDia}
+          desde={desde}
           onSelectDay={(ts) => {
             const d = new Date(ts)
             setSelectedDay({ day: d.getDate(), month: d.getMonth(), year: d.getFullYear() })
