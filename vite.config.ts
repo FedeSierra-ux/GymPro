@@ -21,8 +21,8 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['favicon.svg', 'icons/*.png'],
       manifest: {
-        name: 'Gym',
-        short_name: 'Gym',
+        name: 'GymPro',
+        short_name: 'GymPro',
         description: 'Tu compañero de entrenamiento definitivo',
         theme_color: '#0C0E14',
         background_color: '#0C0E14',

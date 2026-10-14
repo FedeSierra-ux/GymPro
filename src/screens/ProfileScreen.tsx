@@ -133,7 +133,7 @@ export function ProfileScreen() {
                   onChange={(e) => setNameDraft(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
                   maxLength={24}
-                  className="flex-1 bg-surface border border-border-hi rounded-lg px-3 py-1.5 text-ink text-sm focus:outline-none focus:border-primary"
+                  className="flex-1 bg-surface border border-border-hi rounded-lg px-3 py-1.5 text-ink text-sm focus:border-primary"
                 />
                 <button
                   onClick={handleSaveName}
@@ -149,7 +149,7 @@ export function ProfileScreen() {
                 <button
                   onClick={() => { setNameDraft(userName); setEditingName(true) }}
                   aria-label="Editar nombre"
-                  className="text-dim hover:text-ink transition-colors text-sm"
+                  className="text-dim transition-colors text-sm"
                 >
                   ✏️
                 </button>
@@ -171,21 +171,21 @@ export function ProfileScreen() {
         <div className="grid grid-cols-3 gap-2">
           <div className="bg-card border border-border-hi rounded-xl p-3 text-center">
             <p className="text-2xl font-bold text-ink num">{totalWorkouts}</p>
-            <p className="text-[11px] text-dim mt-0.5">Entrenos</p>
+            <p className="text-micro text-dim mt-0.5">Entrenos</p>
           </div>
           <div className="bg-card border border-border-hi rounded-xl p-3 text-center">
             <p className="text-2xl font-bold text-ink num">{Math.round(totalMinutes / 60)}h</p>
-            <p className="text-[11px] text-dim mt-0.5">Horas totales</p>
+            <p className="text-micro text-dim mt-0.5">Horas totales</p>
           </div>
           <div className="bg-card border border-border-hi rounded-xl p-3 text-center">
             <p className="text-2xl font-bold text-ink num">{prs.length}</p>
-            <p className="text-[11px] text-dim mt-0.5">Récords</p>
+            <p className="text-micro text-dim mt-0.5">Récords</p>
           </div>
         </div>
         <div className="mt-2 grid grid-cols-2 gap-2">
           <div className="bg-card border border-border-hi rounded-xl p-3">
             <p className="text-lg font-bold text-ink num">{seriesTotales.toLocaleString('es-AR')}</p>
-            <p className="text-[11px] text-dim mt-0.5">Series en total</p>
+            <p className="text-micro text-dim mt-0.5">Series en total</p>
           </div>
           <div className="bg-card border border-border-hi rounded-xl p-3 flex items-center gap-2">
             <span className="text-lg" aria-hidden="true">🔥</span>

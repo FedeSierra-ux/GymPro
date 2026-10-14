@@ -14,6 +14,30 @@ export interface ProgramaEstado {
   terminado?: boolean
 }
 
+/**
+ * Un ciclo del plan que ya terminó (o que se reemplazó por otro). Sin esto,
+ * fijar de nuevo la semana pisaba el inicio y el ciclo anterior se perdía.
+ */
+export interface CicloPrograma {
+  /** Lunes de la semana 1. */
+  inicio: number
+  /** Primer día fuera del ciclo (exclusivo). */
+  fin: number
+}
+
+/** Lunes siguiente a la semana 6: el primer día fuera del ciclo. */
+export function finDeCiclo(inicio: number): number {
+  const d = new Date(inicio)
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + SEMANAS_PROGRAMA * 7).getTime()
+}
+
+/** Semana del plan en que cae `ts`, o null si queda fuera de las 6. */
+export function semanaDeEntreno(programa: ProgramaEstado | null, ts: number): number | null {
+  if (!programa || programa.terminado) return null
+  const semana = semanaDelPrograma(programa.inicio, ts)
+  return semana >= 1 && semana <= SEMANAS_PROGRAMA ? semana : null
+}
+
 /** Lunes 00:00 de la semana de `ts`. */
 export function lunesDe(ts: number): number {
   const d = new Date(ts)

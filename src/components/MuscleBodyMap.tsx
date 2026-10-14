@@ -1,4 +1,6 @@
 import type { MuscleGroup } from '../types'
+import { S } from '../theme'
+import { muscleColors as colores } from '../../design-tokens.js'
 
 interface Props {
   muscleGroup: MuscleGroup
@@ -7,17 +9,7 @@ interface Props {
   showBack?: boolean
 }
 
-const muscleColors: Record<MuscleGroup, string> = {
-  pecho: '#FF6B6B',
-  espalda: '#38BDF8',
-  hombros: '#FB923C',
-  biceps: '#F472B6',
-  triceps: '#A78BFA',
-  piernas: '#34D399',
-  gluteos: '#EC4899',
-  core: '#FCD34D',
-  cardio: '#60A5FA',
-}
+const muscleColors: Record<MuscleGroup, string> = colores
 
 const frontGroups: MuscleGroup[] = ['pecho', 'hombros', 'biceps', 'core', 'piernas', 'cardio']
 
@@ -32,7 +24,7 @@ function ActiveRegion({ children, color, glowId }: ActiveRegionProps) {
 
 function InactiveRegion({ children }: { children: React.ReactNode }) {
   return (
-    <g fill="#1C1F2A" stroke="#3B3F4E" opacity={0.7}>
+    <g fill={S.surf2} stroke={S.faint} opacity={0.7}>
       {children}
     </g>
   )
@@ -68,29 +60,29 @@ export function MuscleBodyMap({ muscleGroup, size = 80, className, showBack }: P
 
       {/* Body silhouette base */}
       {/* Head */}
-      <ellipse cx="50" cy="11" rx="10" ry="11" fill="#16161f" stroke="#2a2a3e" strokeWidth="1" />
+      <ellipse cx="50" cy="11" rx="10" ry="11" fill={S.surf2} stroke={S.line2} strokeWidth="1" />
       {/* Neck */}
-      <rect x="46" y="22" width="8" height="8" fill="#16161f" stroke="#2a2a3e" strokeWidth="0.5" />
+      <rect x="46" y="22" width="8" height="8" fill={S.surf2} stroke={S.line2} strokeWidth="0.5" />
       {/* Left arm */}
-      <path d="M26,32 L18,38 L12,60 L14,78 L22,76 L20,58 L28,42 Z" fill="#16161f" stroke="#2a2a3e" strokeWidth="0.5" />
+      <path d="M26,32 L18,38 L12,60 L14,78 L22,76 L20,58 L28,42 Z" fill={S.surf2} stroke={S.line2} strokeWidth="0.5" />
       {/* Right arm */}
-      <path d="M74,32 L82,38 L88,60 L86,78 L78,76 L80,58 L72,42 Z" fill="#16161f" stroke="#2a2a3e" strokeWidth="0.5" />
+      <path d="M74,32 L82,38 L88,60 L86,78 L78,76 L80,58 L72,42 Z" fill={S.surf2} stroke={S.line2} strokeWidth="0.5" />
       {/* Torso */}
-      <path d="M28,30 L72,30 L64,96 L36,96 Z" fill="#16161f" stroke="#2a2a3e" strokeWidth="0.5" />
+      <path d="M28,30 L72,30 L64,96 L36,96 Z" fill={S.surf2} stroke={S.line2} strokeWidth="0.5" />
       {/* Hips */}
-      <path d="M36,96 L30,110 L70,110 L64,96 Z" fill="#16161f" stroke="#2a2a3e" strokeWidth="0.5" />
+      <path d="M36,96 L30,110 L70,110 L64,96 Z" fill={S.surf2} stroke={S.line2} strokeWidth="0.5" />
       {/* Left thigh */}
-      <rect x="30" y="110" width="17" height="47" rx="4" fill="#16161f" stroke="#2a2a3e" strokeWidth="0.5" />
+      <rect x="30" y="110" width="17" height="47" rx="4" fill={S.surf2} stroke={S.line2} strokeWidth="0.5" />
       {/* Right thigh */}
-      <rect x="53" y="110" width="17" height="47" rx="4" fill="#16161f" stroke="#2a2a3e" strokeWidth="0.5" />
+      <rect x="53" y="110" width="17" height="47" rx="4" fill={S.surf2} stroke={S.line2} strokeWidth="0.5" />
       {/* Left lower leg */}
-      <rect x="30" y="159" width="16" height="29" rx="3" fill="#16161f" stroke="#2a2a3e" strokeWidth="0.5" />
+      <rect x="30" y="159" width="16" height="29" rx="3" fill={S.surf2} stroke={S.line2} strokeWidth="0.5" />
       {/* Right lower leg */}
-      <rect x="54" y="159" width="16" height="29" rx="3" fill="#16161f" stroke="#2a2a3e" strokeWidth="0.5" />
+      <rect x="54" y="159" width="16" height="29" rx="3" fill={S.surf2} stroke={S.line2} strokeWidth="0.5" />
       {/* Left foot */}
-      <rect x="28" y="186" width="18" height="7" rx="2" fill="#16161f" stroke="#2a2a3e" strokeWidth="0.5" />
+      <rect x="28" y="186" width="18" height="7" rx="2" fill={S.surf2} stroke={S.line2} strokeWidth="0.5" />
       {/* Right foot */}
-      <rect x="54" y="186" width="18" height="7" rx="2" fill="#16161f" stroke="#2a2a3e" strokeWidth="0.5" />
+      <rect x="54" y="186" width="18" height="7" rx="2" fill={S.surf2} stroke={S.line2} strokeWidth="0.5" />
 
       {isFront ? (
         <>

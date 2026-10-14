@@ -1,19 +1,22 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { createSafeStorage, huboFalloDeEscritura } from '../utils/safeStorage'
-import type { ActiveWorkoutExercise, AppToast, Workout } from '../types'
+import type { ActiveWorkoutExercise, ActiveWorkoutSet, AppToast, Exercise, Workout, WorkoutOrigen } from '../types'
 import { useStore } from '../store/useStore'
 import { isDurationExercise, durationUnit, toSeconds, fromSeconds } from '../utils/duration'
 import { clampDecimalInput, normalizeIntegerInput, parseDecimal } from '../utils/numberInput'
 import { lastTopKg } from '../utils/progression'
 import { computeRecords, newRecords } from '../utils/records'
-import { rutinaEnUso } from '../utils/routineVariant'
+import { rutinaEnUso, tieneVariante } from '../utils/routineVariant'
+import { semanaDeEntreno } from '../utils/program'
 import { descansoDeNota } from '../utils/restFromNote'
 
 export interface ActiveWorkout {
   routineId: string
   startedAt: number      // date the workout is recorded for (may be a past-date override)
   realStartedAt: number  // actual wall-clock time when the screen opened (for duration)
+  /** 'manual' si se está cargando un entreno de otro día (desde la Agenda o cambiándole la fecha). */
+  origen?: Exclude<WorkoutOrigen, 'auto'>
   exercises: ActiveWorkoutExercise[]
   restTimerVisible: boolean
   restSecondsLeft: number
@@ -56,8 +59,12 @@ interface WorkoutState {
   /** Saca un ejercicio del entreno en curso (la máquina ocupada, una molestia). */
   removeExerciseFromWorkout: (exerciseIdx: number) => void
   removeSetFromExercise: (exerciseIdx: number, setIdx: number) => void
-  /** `auto` marca el cierre automático: guarda sin abrir el resumen. */
-  finishWorkout: (options?: { auto?: boolean }) => void
+  /**
+   * `auto` marca el cierre automático: guarda sin abrir el resumen.
+   * `incluirCargadas` guarda también las series con datos escritos en este
+   * entreno que quedaron sin tildar (ver `seriesCargadas`).
+   */
+  finishWorkout: (options?: { auto?: boolean; incluirCargadas?: boolean }) => void
   /**
    * Cierra el entreno del día si quedó abierto más de 4 horas. Devuelve true si
    * hizo algo. Se llama al abrir la app, al volver del segundo plano y cada
@@ -97,6 +104,27 @@ export function descansoPara(aw: ActiveWorkout, exerciseId: string): number {
   const routine = useStore.getState().routines.find((r) => r.id === aw.routineId)
   const nota = descansoDeNota(routine?.exercises.find((re) => re.exerciseId === exerciseId)?.note)
   return nota ?? aw.restDefaultSeconds ?? DESCANSO_INICIAL
+}
+
+/** La serie tiene lo mínimo para guardarse: reps, o tiempo en los ejercicios por tiempo. */
+function serieConDatos(s: ActiveWorkoutSet, porTiempo: boolean): boolean {
+  return porTiempo ? (parseDecimal(s.duration ?? '') || 0) > 0 : (parseInt(s.reps) || 0) > 0
+}
+
+/**
+ * Series sin tildar en las que se escribió algo durante el entreno: lo típico
+ * es cargar el peso y las reps de la última serie y olvidarse del tilde.
+ * Lo prellenado de la vez anterior no cuenta.
+ */
+export function seriesCargadas(aw: ActiveWorkout, exercises: Exercise[]): Array<{ exIdx: number; setIdx: number }> {
+  const out: Array<{ exIdx: number; setIdx: number }> = []
+  aw.exercises.forEach((ex, exIdx) => {
+    const porTiempo = isDurationExercise(exercises.find((e) => e.id === ex.exerciseId))
+    ex.sets.forEach((s, setIdx) => {
+      if (!s.completed && s.editada && serieConDatos(s, porTiempo)) out.push({ exIdx, setIdx })
+    })
+  })
+  return out
 }
 
 function clampValue(field: 'kg' | 'reps' | 'duration', value: string): string {
@@ -207,6 +235,7 @@ export const useWorkoutStore = create<WorkoutState>()(
             routineId,
             startedAt: dateOverride ?? now,
             realStartedAt: now,
+            origen: dateOverride != null ? 'manual' : 'en-vivo',
             exercises: activeExercises,
             restTimerVisible: false,
             restSecondsLeft: DESCANSO_INICIAL,
@@ -227,7 +256,10 @@ export const useWorkoutStore = create<WorkoutState>()(
             target.getFullYear(), target.getMonth(), target.getDate(),
             previous.getHours(), previous.getMinutes(), previous.getSeconds(),
           ).getTime()
-          return { activeWorkout: { ...s.activeWorkout, startedAt } }
+          // Pasarlo a otro día es cargarlo después: la hora y la duración no son las de ese día.
+          const real = new Date(s.activeWorkout.realStartedAt)
+          const mismoDia = target.getFullYear() === real.getFullYear() && target.getMonth() === real.getMonth() && target.getDate() === real.getDate()
+          return { activeWorkout: { ...s.activeWorkout, startedAt, origen: mismoDia ? 'en-vivo' : 'manual' } }
         }),
 
       updateSetValue: (exerciseIdx, setIdx, field, value) =>
@@ -238,7 +270,7 @@ export const useWorkoutStore = create<WorkoutState>()(
             if (ei !== exerciseIdx) return ex
             return {
               ...ex,
-              sets: ex.sets.map((st, si) => (si === setIdx ? { ...st, [field]: clamped } : st)),
+              sets: ex.sets.map((st, si) => (si === setIdx ? { ...st, [field]: clamped, editada: true } : st)),
             }
           })
           return { activeWorkout: { ...s.activeWorkout, exercises } }
@@ -445,8 +477,21 @@ export const useWorkoutStore = create<WorkoutState>()(
       },
 
       finishWorkout: (options) => {
-        const { activeWorkout } = get()
-        if (!activeWorkout) return
+        const { activeWorkout: enCurso } = get()
+        if (!enCurso) return
+
+        const { prs, exercises: allExDb, customExercises } = useStore.getState()
+        const allExercises = [...allExDb, ...customExercises]
+
+        // "Guardar también esas": las series cargadas cuentan como hechas.
+        const cargadas = options?.incluirCargadas ? seriesCargadas(enCurso, allExercises) : []
+        const activeWorkout: ActiveWorkout = cargadas.length === 0 ? enCurso : {
+          ...enCurso,
+          exercises: enCurso.exercises.map((ex, exIdx) => ({
+            ...ex,
+            sets: ex.sets.map((st, setIdx) => (cargadas.some((c) => c.exIdx === exIdx && c.setIdx === setIdx) ? { ...st, completed: true } : st)),
+          })),
+        }
 
         const hasWorkingSets = activeWorkout.exercises.some(ex =>
           ex.sets.some(s => s.completed)
@@ -455,9 +500,6 @@ export const useWorkoutStore = create<WorkoutState>()(
           useStore.getState().addToast('Completá al menos una serie antes de terminar', 'info')
           return
         }
-
-        const { prs, exercises: allExDb, customExercises } = useStore.getState()
-        const allExercises = [...allExDb, ...customExercises]
 
         const realFinishedAt = Date.now()
         const rawDurationMin = Math.round((realFinishedAt - activeWorkout.realStartedAt) / 60000)
@@ -494,6 +536,13 @@ export const useWorkoutStore = create<WorkoutState>()(
           }
         })
 
+        // Con qué semana del plan y con qué series se hizo: el informe de un
+        // ciclo pasado no se puede reconstruir después si no se guarda ahora.
+        const { programa, routines } = useStore.getState()
+        const rutina = routines.find((r) => r.id === activeWorkout.routineId)
+        const semanaPrograma = semanaDeEntreno(programa, activeWorkout.startedAt) ?? undefined
+        const origen: WorkoutOrigen = options?.auto ? 'auto' : activeWorkout.origen ?? 'en-vivo'
+
         const newWorkout: Workout = {
           id: typeof crypto !== 'undefined' && 'randomUUID' in crypto ? `workout-${crypto.randomUUID()}` : `workout-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
           routineId: activeWorkout.routineId,
@@ -501,6 +550,9 @@ export const useWorkoutStore = create<WorkoutState>()(
           finishedAt,
           durationMin,
           exercises: workoutExercises,
+          origen,
+          ...(semanaPrograma ? { semanaPrograma } : {}),
+          ...(rutina && tieneVariante(rutina) ? { variante: rutina.variante ?? 'base' } : {}),
         }
 
         // Los récords se derivan del historial completo, con el entreno recién

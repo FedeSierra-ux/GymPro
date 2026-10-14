@@ -185,23 +185,23 @@ export function WorkoutSummaryModal({ workout, prCount, onDismiss }: Props) {
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
             {routine ? <RoutineIcon routine={routine} size={30} boxed /> : <span style={{ fontSize: 52, lineHeight: 1 }}>🏋️</span>}
           </div>
-          <div style={{ fontSize: 24, fontWeight: 800, color: S.ink, letterSpacing: -0.5 }}>
+          <div style={{ fontSize: 26, fontWeight: 800, color: S.ink, letterSpacing: -0.5 }}>
             ¡Entreno completado!
           </div>
-          <div style={{ fontSize: 14, color: S.dim, marginTop: 5 }}>
+          <div style={{ fontSize: 13, color: S.dim, marginTop: 5 }}>
             {routine?.name ?? 'Sesión'}
             {userName ? ` · Buen trabajo, ${userName}` : ''}
           </div>
         </div>
 
         {/* Contra la vez anterior de esta rutina */}
-        <div style={{ margin: '0 20px 16px', flexShrink: 0, background: S.surf2, borderRadius: 14, border: `1px solid ${S.line2}`, padding: '4px 14px' }}>
+        <div style={{ margin: '0 20px 16px', flexShrink: 0, background: S.surf2, borderRadius: 16, border: `1px solid ${S.line2}`, padding: '4px 14px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', columnGap: 14, alignItems: 'baseline', padding: '8px 0 6px', borderBottom: `1px solid ${S.line}` }}>
-            <span style={{ fontSize: 11, color: S.faint, fontWeight: 600 }}>
+            <span style={{ fontSize: 11, color: S.mute, fontWeight: 600 }}>
               {fechaAnterior ? `Contra el ${fechaAnterior}${sinHacer.length ? ', mismos ejercicios' : ''}` : 'Primera vez con esta rutina'}
             </span>
-            <span style={{ fontSize: 11, color: S.faint, fontWeight: 600, textAlign: 'right' }}>Hoy</span>
-            <span style={{ fontSize: 11, color: S.faint, fontWeight: 600, textAlign: 'right', minWidth: 64 }}>{anterior ? 'Diferencia' : ''}</span>
+            <span style={{ fontSize: 11, color: S.mute, fontWeight: 600, textAlign: 'right' }}>Hoy</span>
+            <span style={{ fontSize: 11, color: S.mute, fontWeight: 600, textAlign: 'right', minWidth: 64 }}>{anterior ? 'Diferencia' : ''}</span>
           </div>
           {filas.map(f => (
             <div key={f.label} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', columnGap: 14, alignItems: 'baseline', padding: '9px 0', borderBottom: `1px solid ${S.line}` }}>
@@ -232,14 +232,14 @@ export function WorkoutSummaryModal({ workout, prCount, onDismiss }: Props) {
         {/* La próxima subís */}
         {subir.length > 0 && (
           <div style={{ margin: '0 20px 16px', flexShrink: 0 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: S.faint, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: S.mute, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
               La próxima subís
             </div>
-            <div style={{ background: 'rgba(52,211,153,0.07)', border: '1px solid rgba(52,211,153,0.25)', borderRadius: 14, padding: '4px 14px' }}>
+            <div style={{ background: 'rgba(52,211,153,0.07)', border: '1px solid rgba(52,211,153,0.25)', borderRadius: 16, padding: '4px 14px' }}>
               {subir.map((x, i) => (
                 <div key={x.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline', padding: '9px 0', borderTop: i ? `1px solid ${S.line}` : 'none' }}>
                   <span style={{ fontSize: 13, color: S.ink, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{x.nombre}</span>
-                  <span className="num" style={{ fontSize: 14, fontWeight: 700, color: S.good, flexShrink: 0 }}>▲ {formatKg(x.kg)} kg</span>
+                  <span className="num" style={{ fontSize: 13, fontWeight: 700, color: S.good, flexShrink: 0 }}>▲ {formatKg(x.kg)} kg</span>
                 </div>
               ))}
             </div>
@@ -251,10 +251,10 @@ export function WorkoutSummaryModal({ workout, prCount, onDismiss }: Props) {
           <div style={{
             margin: '0 20px 16px', flexShrink: 0,
             background: 'rgba(242,169,59,0.10)', border: `1px solid rgba(242,169,59,0.28)`,
-            borderRadius: 14, padding: '13px 16px',
+            borderRadius: 16, padding: '13px 16px',
             display: 'flex', alignItems: 'center', gap: 12,
           }}>
-            <span style={{ fontSize: 30 }}>🏆</span>
+            <span style={{ fontSize: 32 }}>🏆</span>
             <div>
               <div style={{ fontSize: 15, fontWeight: 700, color: S.acc2 }}>
                 {prCount === 1 ? '¡Nuevo récord personal!' : `¡${prCount} nuevos récords!`}
@@ -269,10 +269,10 @@ export function WorkoutSummaryModal({ workout, prCount, onDismiss }: Props) {
           <div style={{
             margin: '0 20px 16px', flexShrink: 0,
             background: 'rgba(232,99,74,0.08)', border: `1px solid rgba(232,99,74,0.22)`,
-            borderRadius: 14, padding: '13px 16px',
+            borderRadius: 16, padding: '13px 16px',
             display: 'flex', alignItems: 'flex-start', gap: 12,
           }}>
-            <span style={{ fontSize: 20, flexShrink: 0 }}>🤖</span>
+            <span style={{ fontSize: 22, flexShrink: 0 }}>🤖</span>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: S.acc, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Coach IA</div>
               <div style={{ fontSize: 13, color: S.ink, marginTop: 3, lineHeight: 1.4 }}>
@@ -285,7 +285,7 @@ export function WorkoutSummaryModal({ workout, prCount, onDismiss }: Props) {
         {/* Top exercises */}
         {topExercises.length > 0 && (
           <div style={{ padding: '0 20px 16px', flexShrink: 0 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: S.faint, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: S.mute, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10 }}>
               Ejercicios destacados
             </div>
             <div className="flex flex-col gap-2">
@@ -325,9 +325,9 @@ export function WorkoutSummaryModal({ workout, prCount, onDismiss }: Props) {
             onClick={compartir}
             disabled={compartiendo}
             style={{
-              width: '100%', minHeight: 48, borderRadius: 14, background: 'none',
-              border: `1px solid ${S.line2}`, color: S.ink, fontSize: 14, fontWeight: 600,
-              cursor: compartiendo ? 'wait' : 'pointer', fontFamily: 'DM Sans, system-ui, sans-serif',
+              width: '100%', minHeight: 48, borderRadius: 12, background: 'none',
+              border: `1px solid ${S.line2}`, color: S.ink, fontSize: 15, fontWeight: 600,
+              cursor: compartiendo ? 'wait' : 'pointer',
             }}
           >
             {compartiendo ? 'Armando la imagen…' : 'Compartir imagen ↗'}
@@ -341,7 +341,6 @@ export function WorkoutSummaryModal({ workout, prCount, onDismiss }: Props) {
             style={{
               flex: 1, minHeight: 54, borderRadius: 16,
               background: S.surf2, border: `1px solid ${S.line2}`, color: S.ink,
-              fontFamily: 'DM Sans, system-ui, sans-serif',
               fontSize: 15, fontWeight: 600, cursor: 'pointer',
             }}
           >
@@ -351,10 +350,9 @@ export function WorkoutSummaryModal({ workout, prCount, onDismiss }: Props) {
             onClick={() => onDismiss('progreso')}
             style={{
               flex: 1.4, minHeight: 54, borderRadius: 16,
-              background: `linear-gradient(135deg, ${S.acc} 0%, ${S.accDim} 100%)`,
-              border: 'none', color: '#fff',
-              fontFamily: 'DM Sans, system-ui, sans-serif',
-              fontSize: 16, fontWeight: 700, cursor: 'pointer',
+              background: S.acc,
+              border: 'none', color: S.onAcc,
+              fontSize: 17, fontWeight: 700, cursor: 'pointer',
               letterSpacing: 0.3,
             }}
           >

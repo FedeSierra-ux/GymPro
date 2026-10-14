@@ -43,7 +43,7 @@ export function WeeklyMuscleSets() {
     <div style={{ padding: '12px 22px 0' }}>
       <section
         aria-label="Series de esta semana por músculo"
-        style={{ background: 'var(--surf)', borderRadius: 14, border: '1px solid var(--line2)', padding: '12px 14px' }}
+        style={{ background: 'var(--surf)', borderRadius: 16, border: '1px solid var(--line2)', padding: '12px 14px' }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>Series esta semana</span>

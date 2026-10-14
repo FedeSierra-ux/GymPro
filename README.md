@@ -89,11 +89,26 @@ queda viva para siempre porque el teléfono se guardó en el bolso.
 Terminado a mano, el entreno guarda lo que duró de verdad. Cada serie guarda la
 hora en que se tildó (`completedAt`), así se pueden medir los descansos reales.
 
+Cada entreno guarda además **de dónde salió** (`Workout.origen`: en vivo,
+cargado a mano desde la Agenda o pasándolo a otro día, o cerrado solo), y la
+**semana del plan y la variante** con que se hizo (`semanaPrograma`,
+`variante`). Los informes no usan la hora ni la duración de los cargados a mano
+(la hora es inventada) ni de los cerrados solos (duración fija).
+
+**Terminar** dice cuántas series se hicieron, qué ejercicios faltan y si quedaron
+series con datos cargados sin tildar; esas se pueden guardar igual
+(*Guardar también esas*). Lo prellenado de la vez anterior no cuenta como
+cargado: sólo lo que se escribió en ese entreno (`ActiveWorkoutSet.editada`).
+
 ## Constancia
 
 La Agenda muestra el mes con cada día entrenado pintado del color de su rutina, y
 los días planificados con un aro. El color se guarda en la rutina al crearla
 (`Routine.color`): borrar una rutina no recolorea a las demás.
+
+Los días anteriores a empezar a usar la app no cuentan como faltas
+(`inicioUso`, que se fija al terminar el onboarding; para quien ya la usaba, el
+día del primer entreno).
 
 ## Datos guardados y backup
 
@@ -138,7 +153,9 @@ Semanas 4-6 (`src/utils/program.ts`). Pasada la 6, pregunta si arrancás de
 nuevo; *Terminar el plan* vuelve las rutinas a Semanas 1-3, y desde Ajustes se
 puede retomar. Un cambio manual del selector no se pisa: sólo se aplica cuando
 el plan cambia de bloque. El domingo la tarjeta ya muestra la semana que arranca
-al otro día, y la semana que se elige ese día es la que viene.
+al otro día, y la semana que se elige ese día es la que viene. Reiniciar o terminar
+el plan guarda el ciclo anterior en `ciclosPrograma`, para poder ver su
+informe después.
 
 **Plan en orden.** La semana tipo dice qué días se entrena y en qué orden van
 las rutinas, pero no ata una rutina a un día: toca la siguiente a la última que
@@ -148,6 +165,35 @@ espera brazos, y el calendario corre los días que vienen.
 **Descanso por ejercicio.** El temporizador lee el descanso de la nota
 ("descanso 2 min", "descanso 1:30"; `src/utils/restFromNote.ts`). Elegir otro
 tiempo durante el descanso vale para ese ejercicio el resto del entreno.
+
+## Informes
+
+Los cálculos son puros y tienen tests (`src/utils/cycleReport.ts`,
+`periodSummary.ts`, `yearReview.ts`, `informes.ts`); ninguno usa 1RM.
+
+- **Fin de ciclo.** Pasada la semana 6, la tarjeta del plan ofrece *Ver el
+  informe*: asistencia por semana, récords y, por ejercicio, la mejor serie del
+  principio contra la del final. Como en la semana 4 cambian las reps, la
+  comparación limpia es dentro de cada bloque (S1→S3 y S4→S6). Los ciclos
+  anteriores y el que está en curso se abren desde Progreso → Resumen → *Ciclos*.
+- **Resumen del mes.** Progreso → Resumen muestra entrenos, series, horas y
+  récords del mes contra el mes anterior o el mismo mes del año pasado. El mes
+  en curso se compara contra los mismos días del otro. Las horas no cuentan los
+  entrenos cargados a mano ni los cerrados solos. Del 1 al 7 de cada mes, Inicio
+  ofrece el resumen del mes que terminó.
+- **Tu año en el gym.** Tarjetas estilo historia con el año calendario; el
+  primer año arranca el día que empezaste a usar la app (`inicioUso`). Aparece
+  en Inicio del 1 de diciembre al 15 de enero si hay al menos 8 entrenos, y
+  siempre desde Progreso → Resumen. Cada tarjeta se puede compartir como imagen.
+
+## Diseño
+
+Los colores, la escala tipográfica (11/12/13/15/17/22/26/32) y los radios
+(8/12/16/24) están en `design-tokens.js`: de ahí salen las clases de Tailwind,
+las variables CSS (`--bg`, `--acc`, `--mute`…) y `S`/`T`/`R` de
+`src/theme.ts`. Cada color dice una sola cosa: coral es acción, ámbar es récord,
+verde es hecho, rojo es error. El texto de tercer nivel va en `mute` (`faint`
+sólo para trazos), y sobre coral el texto va oscuro (`onAcc`).
 
 ## Iconos
 

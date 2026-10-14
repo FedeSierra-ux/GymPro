@@ -125,9 +125,9 @@ export function ExerciseDetailSheet({ exercise, onClose, actionLabel, onAction, 
                   <MuscleBodyMap muscleGroup={exercise.muscleGroup} size={40} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-xl font-bold text-white leading-tight">{displayName}</h2>
+                  <h2 className="text-xl font-bold text-ink leading-tight">{displayName}</h2>
                   {detail?.nameArg && detail.nameArg !== exercise.nameEs && (
-                    <p className="text-xs text-gray-500 mt-0.5">{exercise.nameEs}</p>
+                    <p className="text-xs text-dim mt-0.5">{exercise.nameEs}</p>
                   )}
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
                     <span
@@ -136,13 +136,13 @@ export function ExerciseDetailSheet({ exercise, onClose, actionLabel, onAction, 
                     >
                       <MuscleIcon group={exercise.muscleGroup} size={20} /> {config.label}
                     </span>
-                    <span className="text-xs px-2.5 py-1 rounded-full text-gray-400 bg-surface border border-border">
+                    <span className="text-xs px-2.5 py-1 rounded-full text-dim bg-surface border border-border">
                       {exercise.equipment}
                     </span>
                   </div>
                 </div>
               </div>
-              <button onClick={onClose} className="text-gray-500 hover:text-white text-2xl leading-none mt-1 flex-shrink-0">×</button>
+              <button onClick={onClose} className="text-dim text-2xl leading-none mt-1 flex-shrink-0">×</button>
             </div>
           </div>
 
@@ -175,7 +175,7 @@ export function ExerciseDetailSheet({ exercise, onClose, actionLabel, onAction, 
                     <p className="section-label mb-2">Músculos principales</p>
                     <div className="flex flex-wrap gap-1">
                       {detail.primaryMuscles.map(m => (
-                        <span key={m} className="text-xs px-2 py-0.5 rounded-full text-white bg-primary/15 border border-primary/20">{m}</span>
+                        <span key={m} className="text-xs px-2 py-0.5 rounded-full text-ink bg-primary/15 border border-primary/20">{m}</span>
                       ))}
                     </div>
                   </div>
@@ -185,7 +185,7 @@ export function ExerciseDetailSheet({ exercise, onClose, actionLabel, onAction, 
                     <p className="section-label mb-2">Secundarios</p>
                     <div className="flex flex-wrap gap-1">
                       {detail.secondaryMuscles.map(m => (
-                        <span key={m} className="text-xs px-2 py-0.5 rounded-full text-gray-400 bg-surface border border-border">{m}</span>
+                        <span key={m} className="text-xs px-2 py-0.5 rounded-full text-dim bg-surface border border-border">{m}</span>
                       ))}
                     </div>
                   </div>
@@ -207,7 +207,7 @@ export function ExerciseDetailSheet({ exercise, onClose, actionLabel, onAction, 
                     >
                       {i + 1}
                     </span>
-                    <p className="text-sm text-gray-300 leading-relaxed flex-1">{step}</p>
+                    <p className="text-sm text-ink leading-relaxed flex-1">{step}</p>
                   </div>
                 ))}
               </div>
@@ -222,7 +222,7 @@ export function ExerciseDetailSheet({ exercise, onClose, actionLabel, onAction, 
                 {detail.tips.map((tip, i) => (
                   <div key={i} className="flex gap-2.5 items-start">
                     <span className="text-primary text-sm mt-0.5 flex-shrink-0">✓</span>
-                    <p className="text-sm text-gray-400">{tip}</p>
+                    <p className="text-sm text-dim">{tip}</p>
                   </div>
                 ))}
               </div>
@@ -231,7 +231,7 @@ export function ExerciseDetailSheet({ exercise, onClose, actionLabel, onAction, 
 
           {!detail && (
             <div className="px-5 py-4 mx-5 bg-surface rounded-2xl border border-border text-center">
-              <p className="text-gray-500 text-sm">Instrucciones próximamente</p>
+              <p className="text-dim text-sm">Instrucciones próximamente</p>
             </div>
           )}
         </div>
@@ -245,7 +245,7 @@ export function ExerciseDetailSheet({ exercise, onClose, actionLabel, onAction, 
               className={`w-full py-4 rounded-2xl font-bold text-base transition-all ${
                 actionDisabled
                   ? 'bg-primary/20 text-primary border border-primary/30'
-                  : 'btn-primary-glow text-black'
+                  : 'btn-primary'
               }`}
             >
               {actionDisabled ? '✓ Agregado' : actionLabel}
@@ -293,7 +293,7 @@ function WgerImage({ wgerId, name, onError, fallback }: { wgerId: number; name: 
   if (!imageUrl) return (
     <div className="flex items-center justify-center w-full h-full">
       {fallback ?? (
-        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" className="text-gray-700">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" className="text-mute">
           <circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4"/>
           <path d="M24 14 L24 26 M24 30 L24 34" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
         </svg>

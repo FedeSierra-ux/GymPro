@@ -4,8 +4,10 @@ export declare const colors: {
   surf2: string
   ink: string
   dim: string
+  mute: string
   faint: string
   acc: string
+  onAcc: string
   accDim: string
   acc2: string
   good: string
@@ -27,3 +29,24 @@ export declare const text: {
 }
 
 export declare const TAP_MIN: number
+
+export declare const routinePalette: string[]
+
+export declare const muscleColors: {
+  pecho: string
+  hombros: string
+  core: string
+  piernas: string
+  gluteos: string
+  espalda: string
+  biceps: string
+  triceps: string
+  cardio: string
+}
+
+export declare const radius: {
+  sm: number
+  md: number
+  lg: number
+  xl: number
+}

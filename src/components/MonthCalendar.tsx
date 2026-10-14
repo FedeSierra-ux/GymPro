@@ -24,7 +24,7 @@ interface DayCell {
  * lee de un vistazo qué días se fue y si se están alternando bien las rutinas.
  */
 export function MonthCalendar({
-  year, month, workouts, routines, onSelectDay, weekPlan, weekOverrides, planPorDia,
+  year, month, workouts, routines, onSelectDay, weekPlan, weekOverrides, planPorDia, desde,
 }: {
   year: number
   month: number
@@ -43,6 +43,8 @@ export function MonthCalendar({
    * rutinas se corren).
    */
   planPorDia?: Map<string, string>
+  /** Antes de este día (el que se empezó a usar la app) no se marcan días planificados. */
+  desde?: number | null
 }) {
   // Una sola lectura del reloj por montaje: el render tiene que ser puro.
   const nowTs = useHoy()
@@ -84,7 +86,7 @@ export function MonthCalendar({
       {/* Días de la semana, en horizontal */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 4 }}>
         {DAY_LABELS.map((d, i) => (
-          <div key={i} style={{ fontSize: 11, color: S.faint, textAlign: 'center', fontWeight: 600 }}>{d}</div>
+          <div key={i} style={{ fontSize: 11, color: S.mute, textAlign: 'center', fontWeight: 600 }}>{d}</div>
         ))}
       </div>
 
@@ -105,7 +107,8 @@ export function MonthCalendar({
               const rutinaPlan = planPorDia && rutinaSemana && (cell.isFuture || cell.isToday)
                 ? planPorDia.get(cell.key) ?? rutinaSemana
                 : rutinaSemana
-              const planned = !entrenado && rutinaPlan != null
+              const antesDeEmpezar = desde != null && cell.ts < desde
+              const planned = !entrenado && rutinaPlan != null && !antesDeEmpezar
               const pasado = !cell.isFuture && !cell.isToday
               const aro = planned ? routineColor(rutinaPlan, routines) : null
               const nombreRutina = cell.routineId
@@ -138,7 +141,7 @@ export function MonthCalendar({
                       : cell.isToday ? `1.5px solid ${S.ink}` : '2px solid transparent',
                     opacity: aro && pasado ? 0.4 : 1,
                     boxShadow: entrenado && cell.isToday ? `0 0 0 2px ${S.bg}, 0 0 0 3.5px ${S.ink}` : undefined,
-                    color: entrenado ? '#0C0E14' : aro ? S.ink : cell.isFuture ? S.faint : S.dim,
+                    color: entrenado ? S.bg : aro ? S.ink : cell.isFuture ? S.mute : S.dim,
                     fontSize: 12, fontWeight: entrenado || cell.isToday ? 700 : 500,
                     cursor: onSelectDay ? 'pointer' : 'default',
                   }}
@@ -162,7 +165,7 @@ export function MonthCalendar({
           ))}
           {hayBorradas && (
             <span className="flex items-center gap-1.5" style={{ fontSize: 11, color: S.dim }}>
-              <span style={{ width: 9, height: 9, borderRadius: 3, background: '#6B7280', flexShrink: 0 }} />
+              <span style={{ width: 9, height: 9, borderRadius: 3, background: S.faint, flexShrink: 0 }} />
               Rutina eliminada
             </span>
           )}

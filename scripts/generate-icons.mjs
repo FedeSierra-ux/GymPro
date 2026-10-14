@@ -97,7 +97,13 @@ async function writePng(relPath, svg, size) {
 }
 
 const squircle = buildSvg('squircle')
-const circle = buildSvg('circle')
+// En el recorte redondo los discos de las puntas tocaban el borde: al 70 % entran.
+const circle = buildSvg('circle', 0.7)
+// Launcher de Android (legacy): el squircle con la marca al 80 %.
+const launcher = buildSvg('squircle', 0.8)
+// El ícono 'any' de la PWA va a sangre: los launchers que aplican su propia
+// máscara dejaban esquinas oscuras dobles con el squircle horneado.
+const any = buildSvg('full', 0.8)
 const maskable = buildSvg('full', 0.62)
 // iOS recorta el ícono él mismo: si le pasamos el squircle quedan esquinas
 // negras, así que el apple-touch-icon va a sangre y con la marca un poco más
@@ -108,8 +114,8 @@ const appleTouch = buildSvg('full', 0.78)
 await writeSvg('public/favicon.svg', squircle)
 await writeSvg('public/icons/icon-192.svg', squircle)
 await writeSvg('public/icons/icon-512.svg', squircle)
-await writePng('public/icons/icon-192.png', squircle, 192)
-await writePng('public/icons/icon-512.png', squircle, 512)
+await writePng('public/icons/icon-192.png', any, 192)
+await writePng('public/icons/icon-512.png', any, 512)
 await writePng('public/icons/icon-512-maskable.png', maskable, 512)
 await writePng('public/icons/apple-touch-icon.png', appleTouch, 180)
 
@@ -117,7 +123,7 @@ await writePng('public/icons/apple-touch-icon.png', appleTouch, 180)
 const densities = { mdpi: 48, hdpi: 72, xhdpi: 96, xxhdpi: 144, xxxhdpi: 192 }
 for (const [density, size] of Object.entries(densities)) {
   const dir = `android/app/src/main/res/mipmap-${density}`
-  await writePng(`${dir}/ic_launcher.png`, squircle, size)
+  await writePng(`${dir}/ic_launcher.png`, launcher, size)
   await writePng(`${dir}/ic_launcher_round.png`, circle, size)
 }
 

@@ -95,7 +95,7 @@ export function MedidasSheet({ onClose }: { onClose: () => void }) {
               <div>
                 <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: -0.6, color: S.ink, lineHeight: 1 }}>
                   {ultimo ? ultimo.value.toLocaleString('es-AR', { maximumFractionDigits: 1 }) : '—'}
-                  <span style={{ fontSize: 14, color: S.dim, fontWeight: 500 }}> {campo.unidad}</span>
+                  <span style={{ fontSize: 13, color: S.dim, fontWeight: 500 }}> {campo.unidad}</span>
                 </div>
                 <div style={{ fontSize: 11, color: S.dim, marginTop: 4 }}>
                   {ultimo
@@ -104,18 +104,18 @@ export function MedidasSheet({ onClose }: { onClose: () => void }) {
                 </div>
               </div>
               {serie.length > 1 && delta !== 0 && (
-                <div style={{ fontSize: 13, fontWeight: 700, color: delta > 0 ? S.acc2 : S.info }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: S.ink }}>
                   {delta > 0 ? '↑' : '↓'} {Math.abs(delta).toLocaleString('es-AR', { maximumFractionDigits: 1 })} {campo.unidad}
-                  <div style={{ fontSize: 11, color: S.faint, fontWeight: 500, textAlign: 'right' }}>desde el inicio</div>
+                  <div style={{ fontSize: 11, color: S.mute, fontWeight: 500, textAlign: 'right' }}>desde el inicio</div>
                 </div>
               )}
             </div>
             {serie.length > 1 ? (
               <div style={{ height: 56 }}>
-                <Sparkline values={serie.map((p) => p.value)} color={S.acc} height={56} />
+                <Sparkline values={serie.map((p) => p.value)} color={S.info} height={56} />
               </div>
             ) : (
-              <p style={{ fontSize: 11, color: S.faint, padding: '14px 0' }}>
+              <p style={{ fontSize: 11, color: S.mute, padding: '14px 0' }}>
                 Con dos mediciones ya se dibuja la curva.
               </p>
             )}
@@ -133,10 +133,10 @@ export function MedidasSheet({ onClose }: { onClose: () => void }) {
                   onClick={() => setVerCampo(c.key)}
                   style={{
                     padding: '8px 14px', borderRadius: 20, flexShrink: 0, minHeight: 40, whiteSpace: 'nowrap',
-                    fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                    fontSize: 12, fontWeight: 600, cursor: 'pointer',
                     background: activo ? 'rgba(232,99,74,0.16)' : S.surf2,
                     border: `1px solid ${activo ? S.acc : S.line2}`,
-                    color: activo ? S.acc : tiene ? S.dim : S.faint,
+                    color: activo ? S.acc : tiene ? S.dim : S.mute,
                   }}
                 >{c.label}</button>
               )
@@ -151,7 +151,7 @@ export function MedidasSheet({ onClose }: { onClose: () => void }) {
                 type="date" value={borrador.fecha} max={hoy}
                 onChange={(e) => setBorrador((b) => ({ ...b, fecha: e.target.value }))}
                 aria-label="Fecha de la medición"
-                style={{ width: '100%', marginTop: 4, marginBottom: 12, background: S.surf, border: `1px solid ${S.line2}`, borderRadius: 10, padding: '12px', fontSize: 16, color: S.ink, fontFamily: 'inherit' }}
+                style={{ width: '100%', marginTop: 4, marginBottom: 12, background: S.surf, border: `1px solid ${S.line2}`, borderRadius: 12, padding: '12px', fontSize: 15, color: S.ink }}
               />
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 {CAMPOS.map((c) => (
@@ -163,7 +163,7 @@ export function MedidasSheet({ onClose }: { onClose: () => void }) {
                       onChange={(e) => setValor(c.key, e.target.value, c.max)}
                       placeholder="—"
                       aria-label={`${c.label} en ${c.unidad}`}
-                      style={{ width: '100%', minWidth: 0, marginTop: 4, background: S.surf, border: `1px solid ${S.line2}`, borderRadius: 10, padding: '12px 10px', fontSize: 16, color: S.ink, fontFamily: 'inherit', textAlign: 'center' }}
+                      style={{ width: '100%', minWidth: 0, marginTop: 4, background: S.surf, border: `1px solid ${S.line2}`, borderRadius: 12, padding: '12px 10px', fontSize: 15, color: S.ink, textAlign: 'center' }}
                     />
                   </div>
                 ))}
@@ -171,18 +171,18 @@ export function MedidasSheet({ onClose }: { onClose: () => void }) {
               <div className="flex gap-2" style={{ marginTop: 14 }}>
                 <button
                   onClick={() => { setCargando(false); setBorrador({ fecha: hoy }) }}
-                  style={{ flex: 1, minHeight: 48, borderRadius: 14, background: 'none', border: `1px solid ${S.line2}`, color: S.dim, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                  style={{ flex: 1, minHeight: 48, borderRadius: 12, background: 'none', border: `1px solid ${S.line2}`, color: S.dim, fontSize: 15, fontWeight: 600, cursor: 'pointer' }}
                 >Cancelar</button>
                 <button
                   onClick={guardar}
-                  style={{ flex: 1.4, minHeight: 48, borderRadius: 14, background: S.acc, border: 'none', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+                  style={{ flex: 1.4, minHeight: 48, borderRadius: 12, background: S.acc, border: 'none', color: S.onAcc, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
                 >Guardar</button>
               </div>
             </div>
           ) : (
             <button
               onClick={() => setCargando(true)}
-              style={{ width: '100%', minHeight: 52, borderRadius: 14, background: S.acc, border: 'none', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+              style={{ width: '100%', minHeight: 52, borderRadius: 12, background: S.acc, border: 'none', color: S.onAcc, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
             >
               + Anotar una medición
             </button>

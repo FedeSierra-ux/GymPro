@@ -1,3 +1,4 @@
+import { routinePalette } from '../../design-tokens.js'
 import type { Routine, Workout } from '../types'
 
 /** Clave YYYY-MM-DD en hora local (no UTC: si no, los entrenos de la noche caen al día siguiente). */
@@ -41,14 +42,8 @@ export function routineByDay(workouts: Workout[]): Map<string, string> {
  * responde la pregunta que uno de verdad le hace a un calendario de entrenos:
  * ¿estoy alternando bien?
  */
-export const ROUTINE_COLORS = [
-  '#E8634A', // coral — el acento de la app
-  '#38BDF8', // celeste
-  '#A78BFA', // violeta
-  '#34D399', // verde
-  '#F2A93B', // ámbar
-  '#F472B6', // rosa
-]
+/** Ver design-tokens.js: sin colores de estado, para que una rutina no parezca un aviso. */
+export const ROUTINE_COLORS = routinePalette
 
 /**
  * Color de una rutina: el que quedó guardado al crearla. Antes salía de la
@@ -110,6 +105,20 @@ export function plannedDowSet(weekPlan: Record<number, string | null>, routineId
       .filter(([, id]) => !!id && (!routineIds || routineIds.includes(id)))
       .map(([dow]) => Number(dow))
   )
+}
+
+/**
+ * Desde qué día (00:00) cuentan las faltas: el día en que se empezó a usar la
+ * app, o el primer entreno si se cargó alguno de antes. Sin esto, la primera
+ * semana decía "1 de 6 planificados" por días en que la app no existía.
+ * null = no se sabe: se cuenta todo, como antes.
+ */
+export function inicioDeFaltas(inicioUso: number | null, workouts: Workout[]): number | null {
+  const primero = workouts.reduce((min, w) => (w.finishedAt && w.startedAt < min ? w.startedAt : min), Infinity)
+  const desde = Math.min(inicioUso ?? Infinity, primero)
+  if (!Number.isFinite(desde)) return null
+  const d = new Date(desde)
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
 }
 
 /** Las mismas cuentas que muestra la grilla, para el encabezado de la pantalla. */

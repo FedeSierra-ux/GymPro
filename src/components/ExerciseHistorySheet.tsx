@@ -105,10 +105,10 @@ export function ExerciseHistorySheet({ exerciseId, onClose }: { exerciseId: stri
             onClick={onClose}
             aria-label="Volver"
             style={{
-              width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+              width: 36, height: 36, borderRadius: 12, flexShrink: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               background: S.surf2, border: `1px solid ${S.line2}`, color: S.dim,
-              fontSize: 20, cursor: 'pointer', lineHeight: 1,
+              fontSize: 22, cursor: 'pointer', lineHeight: 1,
             }}
           >
             ‹
@@ -131,26 +131,26 @@ export function ExerciseHistorySheet({ exerciseId, onClose }: { exerciseId: stri
         {sessions.length === 0 ? (
           <div className="flex items-center justify-center" style={{ height: 200 }}>
             <div className="text-center">
-              <p style={{ color: S.dim, fontSize: 14 }}>Todavía no registraste este ejercicio</p>
-              <p style={{ color: S.faint, fontSize: 12, marginTop: 4 }}>Completá una serie para ver tu historial</p>
+              <p style={{ color: S.dim, fontSize: 13 }}>Todavía no registraste este ejercicio</p>
+              <p style={{ color: S.mute, fontSize: 12, marginTop: 4 }}>Completá una serie para ver tu historial</p>
             </div>
           </div>
         ) : (
           <>
             {/* Resumen */}
             <div className="flex gap-2" style={{ marginBottom: 16 }}>
-              <div style={{ flex: 1, background: S.surf, border: `1px solid ${S.line2}`, borderRadius: 14, padding: '12px 10px', textAlign: 'center' }}>
+              <div style={{ flex: 1, background: S.surf, border: `1px solid ${S.line2}`, borderRadius: 16, padding: '12px 10px', textAlign: 'center' }}>
                 <div className="num" style={{ fontSize: 22, fontWeight: 700, color: S.ink }}>{textoValor(kind, currentValor)}<span style={{ fontSize: 12, color: S.dim, fontWeight: 500 }}>{unidad}</span></div>
                 <div style={{ fontSize: 11, color: S.dim, marginTop: 2 }}>Última vez</div>
               </div>
-              <div style={{ flex: 1, background: S.surf, border: `1px solid ${S.line2}`, borderRadius: 14, padding: '12px 10px', textAlign: 'center' }}>
+              <div style={{ flex: 1, background: S.surf, border: `1px solid ${S.line2}`, borderRadius: 16, padding: '12px 10px', textAlign: 'center' }}>
                 <div className="num" style={{ fontSize: 22, fontWeight: 700, color: S.acc2 }}>
                   {textoRecord}
                 </div>
                 <div style={{ fontSize: 11, color: S.dim, marginTop: 2 }}>🏆 Récord</div>
               </div>
-              <div style={{ flex: 1, background: S.surf, border: `1px solid ${S.line2}`, borderRadius: 14, padding: '12px 10px', textAlign: 'center' }}>
-                <div className="num" style={{ fontSize: 22, fontWeight: 700, color: change > 0 ? S.good : change < 0 ? '#f87171' : S.ink }}>
+              <div style={{ flex: 1, background: S.surf, border: `1px solid ${S.line2}`, borderRadius: 16, padding: '12px 10px', textAlign: 'center' }}>
+                <div className="num" style={{ fontSize: 22, fontWeight: 700, color: change > 0 ? S.good : change < 0 ? S.bad : S.ink }}>
                   {change > 0 ? '+' : change < 0 ? '−' : ''}{textoValor(kind, Math.abs(change))}<span style={{ fontSize: 12, color: S.dim, fontWeight: 500 }}>{unidad}</span>
                 </div>
                 <div style={{ fontSize: 11, color: S.dim, marginTop: 2 }}>Progreso</div>
@@ -169,7 +169,7 @@ export function ExerciseHistorySheet({ exerciseId, onClose }: { exerciseId: stri
                   const h = Math.max(Math.round((v / maxValor) * 100), 8)
                   return (
                     <div key={s.date} className="flex-1 flex flex-col items-center justify-end" style={{ minWidth: 0 }} title={`${fmtDate(s.date)} · ${textoSerie(kind, s.best)}`}>
-                      <div className="num" style={{ fontSize: 11, color: isLast ? S.ink : S.faint, fontWeight: 600, marginBottom: 3 }}>{kind === 'tiempo' ? Math.round(v) : textoValor(kind, v)}</div>
+                      <div className="num" style={{ fontSize: 11, color: isLast ? S.ink : S.mute, fontWeight: 600, marginBottom: 3 }}>{kind === 'tiempo' ? Math.round(v) : textoValor(kind, v)}</div>
                       <div style={{
                         width: '100%', height: `${h}%`, minHeight: 4, borderRadius: '4px 4px 0 0',
                         background: isLast ? S.acc : 'rgba(232,99,74,0.28)', transition: 'height 0.4s ease',
@@ -186,7 +186,7 @@ export function ExerciseHistorySheet({ exerciseId, onClose }: { exerciseId: stri
             </div>
             <div className="flex flex-col gap-2">
               {[...sessions].reverse().map((s) => (
-                <div key={s.date} style={{ background: S.surf, border: `1px solid ${S.line2}`, borderRadius: 14, padding: '12px 14px' }}>
+                <div key={s.date} style={{ background: S.surf, border: `1px solid ${S.line2}`, borderRadius: 16, padding: '12px 14px' }}>
                   <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
                     <span style={{ fontSize: 13, fontWeight: 700, color: S.ink, textTransform: 'capitalize' }}>{fmtDate(s.date)}</span>
                     <span className="num" style={{ fontSize: 11, color: S.dim }}>
@@ -198,7 +198,7 @@ export function ExerciseHistorySheet({ exerciseId, onClose }: { exerciseId: stri
                       const isBest = puntaje(kind, set) === puntaje(kind, s.best)
                       return (
                         <span key={idx} className="num" style={{
-                          fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 7,
+                          fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 8,
                           background: isBest ? 'rgba(232,99,74,0.15)' : S.surf2,
                           border: `1px solid ${isBest ? 'rgba(232,99,74,0.35)' : S.line2}`,
                           color: isBest ? S.acc : S.dim,

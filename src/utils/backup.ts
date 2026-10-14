@@ -164,13 +164,19 @@ function normalizarDatos(inner: Record<string, unknown>): string {
   const state = migrarEstado(inner.state, version)
 
   if (!Array.isArray(state.routines) && !Array.isArray(state.workouts)) throw new Error(invalido)
-  const listas = ['routines', 'workouts', 'prs', 'measures', 'customExercises'] as const
+  const listas = ['routines', 'workouts', 'prs', 'measures', 'customExercises', 'ciclosPrograma'] as const
   for (const k of listas) {
     if (state[k] !== undefined && !Array.isArray(state[k])) throw new Error(invalido)
   }
   for (const k of ['weekPlan', 'weekOverrides', 'exerciseTips', 'archivedRoutineNames'] as const) {
     if (state[k] !== undefined && state[k] !== null && !esObjeto(state[k])) throw new Error(invalido)
   }
+  if (state.inicioUso != null && !esNumero(state.inicioUso)) throw new Error(invalido)
+  // Qué tarjetas de Inicio ya se cerraron: si vienen mal, se olvidan (vuelven a aparecer) en vez de rechazar el backup.
+  if (state.resumenMesCerrado != null && typeof state.resumenMesCerrado !== 'string') delete state.resumenMesCerrado
+  if (state.wrappedCerrado != null && !esNumero(state.wrappedCerrado)) delete state.wrappedCerrado
+  const ciclosOk = ((state.ciclosPrograma ?? []) as unknown[]).every((c) => esObjeto(c) && esNumero(c.inicio) && esNumero(c.fin))
+  if (!ciclosOk) throw new Error(invalido)
   const workouts = (state.workouts ?? []) as unknown[]
   const entrenosOk = workouts.every((w) =>
     esObjeto(w) && typeof w.id === 'string' && esNumero(w.startedAt) && Array.isArray(w.exercises)

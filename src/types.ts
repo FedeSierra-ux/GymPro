@@ -88,6 +88,8 @@ export interface WorkoutExercise {
   sets: WorkoutSet[]
 }
 
+export type WorkoutOrigen = 'en-vivo' | 'manual' | 'auto'
+
 export interface Workout {
   id: string
   routineId: string
@@ -95,6 +97,18 @@ export interface Workout {
   finishedAt?: number
   durationMin?: number
   exercises: WorkoutExercise[]
+  /**
+   * Cómo se registró: en vivo en el gimnasio, cargado después a mano (desde la
+   * Agenda o cambiándole el día) o cerrado solo a las 4 horas. Los cargados a
+   * mano tienen una hora inventada y una duración que es lo que se tardó en
+   * cargarlos, y los cerrados solos una duración fija: los informes no los usan
+   * para medir horarios ni duraciones. Los entrenos viejos no lo tienen.
+   */
+  origen?: WorkoutOrigen
+  /** Semana del plan por semanas (1-6) en que se hizo, si había uno en curso. */
+  semanaPrograma?: number
+  /** Con qué series se hizo la rutina: las de Semanas 1-3 ('base') o las de 4-6 ('alt'). Sólo en rutinas con variante. */
+  variante?: 'base' | 'alt'
   /** @deprecated Se calculaba como minutos × 6,5 para cualquier persona. Sólo queda para leer entrenos viejos. */
   kcal?: number
 }
@@ -154,6 +168,11 @@ export interface ActiveWorkoutSet {
   duration?: string
   /** Momento real (reloj de pared) en que se tildó la serie. */
   completedAt?: number
+  /**
+   * Se escribió algo en la serie durante este entreno. Lo prellenado de la vez
+   * anterior no cuenta: así "cargada sin tildar" quiere decir que la hiciste.
+   */
+  editada?: boolean
 }
 
 export interface ActiveWorkoutExercise {

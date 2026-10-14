@@ -3,12 +3,14 @@ import { useStore, useAllExercises } from '../store/useStore'
 import { useWorkoutStore } from '../stores/workoutStore'
 import { BackupReminder } from '../components/BackupReminder'
 import { getWorkoutStreak } from '../utils/streak'
-import { plannedDowSet, dayKey } from '../utils/trainingDays'
+import { plannedDowSet, dayKey, inicioDeFaltas } from '../utils/trainingDays'
 import { planDeSemana } from '../utils/weekPlan'
 import { prediccionDelPlan } from '../utils/planOrder'
 import { haceCuanto } from '../utils/relativeDate'
 import { ProgramCard } from '../components/ProgramCard'
 import { WeeklyReview } from '../components/WeeklyReview'
+import { ResumenMesCard } from '../components/ResumenMesCard'
+import { WrappedCard } from '../components/WrappedCard'
 import { WeeklyMuscleSets } from '../components/WeeklyMuscleSets'
 import { RoutineIcon } from '../components/RoutineIcon'
 
@@ -23,7 +25,7 @@ function formatDate() {
 }
 
 export function HomeScreen() {
-  const { userName, avatarPhoto, workouts, routines, prs, weekPlan: planBase, weekOverrides, weeklyGoal, setActiveTab, openAgendaDay, getArchivedRoutineName } = useStore()
+  const { userName, avatarPhoto, workouts, routines, prs, weekPlan: planBase, weekOverrides, weeklyGoal, setActiveTab, openAgendaDay, getArchivedRoutineName, inicioUso } = useStore()
   const allExercises = useAllExercises()
   const startWorkout = useWorkoutStore((s) => s.startWorkout)
 
@@ -48,9 +50,12 @@ export function HomeScreen() {
   const hoyIdx = (hoy.getDay() + 6) % 7
   const lunes = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() - hoyIdx)
   const diasEntrenados = new Set(finishedWorkouts.map(w => dayKey(w.startedAt)))
+  // Los días anteriores a empezar a usar la app no son faltas ni cuentan para la meta.
+  const desde = inicioDeFaltas(inicioUso, finishedWorkouts)
   const semana = DIAS.map((letra, i) => {
     const fecha = new Date(lunes.getFullYear(), lunes.getMonth(), lunes.getDate() + i)
-    const rutinaPlan = weekPlan[i] && routines.some(r => r.id === weekPlan[i]) ? weekPlan[i] : null
+    const antesDeEmpezar = desde != null && fecha.getTime() < desde
+    const rutinaPlan = !antesDeEmpezar && weekPlan[i] && routines.some(r => r.id === weekPlan[i]) ? weekPlan[i] : null
     return {
       letra,
       hecho: diasEntrenados.has(dayKey(fecha.getTime())),
@@ -123,7 +128,7 @@ export function HomeScreen() {
               <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--dim)', letterSpacing: 0.3 }}>
                 {formatDate()}
               </div>
-              <div style={{ fontSize: 21, fontWeight: 700, letterSpacing: -0.4, marginTop: 2, color: 'var(--ink)' }}>
+              <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: -0.4, marginTop: 2, color: 'var(--ink)' }}>
                 Hola, {userName}
               </div>
             </div>
@@ -134,7 +139,7 @@ export function HomeScreen() {
                 flexShrink: 0, width: 44, height: 44, borderRadius: 22,
                 background: 'var(--surf2)', border: '2px solid var(--acc)', overflow: 'hidden', padding: 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 18, fontWeight: 700, color: 'var(--acc)',
+                fontSize: 17, fontWeight: 700, color: 'var(--acc)',
               }}
             >
               {avatarPhoto
@@ -147,19 +152,19 @@ export function HomeScreen() {
         {/* Qué toca hoy — lo primero, con el botón de arrancar sobre el pliegue */}
         <div style={{ padding: '16px 22px 0' }}>
           {suggestedRoutine ? (
-            <div style={{ background: 'var(--surf)', borderRadius: 18, overflow: 'hidden', border: '1px solid var(--line2)' }}>
+            <div style={{ background: 'var(--surf)', borderRadius: 16, overflow: 'hidden', border: '1px solid var(--line2)' }}>
               <div style={{ padding: '16px 18px 14px' }}>
                 <div className="flex items-center justify-between gap-2" style={{ marginBottom: 8 }}>
                   <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--dim)', letterSpacing: 0.3 }}>
                     {yaEntreneHoy ? 'Próximo entreno' : esDelPlan ? 'Hoy te toca' : esDescansoPlanificado ? 'Hoy descansás' : 'Próximo entreno'}
                   </span>
                   {esDelPlan && (
-                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--acc)', background: 'rgba(232,99,74,0.12)', border: '1px solid rgba(232,99,74,0.22)', padding: '3px 9px', borderRadius: 20 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--acc)', background: 'rgba(232,99,74,0.12)', border: '1px solid rgba(232,99,74,0.22)', padding: '3px 9px', borderRadius: 24 }}>
                       Sigue tu plan
                     </span>
                   )}
                   {esDescansoPlanificado && (
-                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--dim)', background: 'var(--surf2)', border: '1px solid var(--line2)', padding: '3px 9px', borderRadius: 20 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--dim)', background: 'var(--surf2)', border: '1px solid var(--line2)', padding: '3px 9px', borderRadius: 24 }}>
                       podés adelantar
                     </span>
                   )}
@@ -176,9 +181,9 @@ export function HomeScreen() {
               <button
                 onClick={() => startWorkout(suggestedRoutine.id)}
                 style={{
-                  width: '100%', background: 'linear-gradient(135deg, var(--acc) 0%, var(--primary-dim) 100%)', border: 'none',
-                  color: '#fff', fontSize: 16, fontWeight: 700, minHeight: 56,
-                  cursor: 'pointer', fontFamily: 'DM Sans, system-ui, sans-serif', letterSpacing: 0.3,
+                  width: '100%', background: 'linear-gradient(135deg, var(--acc) 0%, var(--acc-dim) 100%)', border: 'none',
+                  color: 'var(--on-acc)', fontSize: 17, fontWeight: 700, minHeight: 56,
+                  cursor: 'pointer', letterSpacing: 0.3,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 }}
               >
@@ -198,7 +203,7 @@ export function HomeScreen() {
                         flexShrink: 0, minHeight: 40, padding: '0 14px', borderRadius: 12,
                         background: 'var(--surf2)', border: '1px solid var(--line2)',
                         color: 'var(--dim)', fontSize: 12, fontWeight: 600,
-                        cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+                        cursor: 'pointer', whiteSpace: 'nowrap',
                       }}
                     >
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -210,9 +215,9 @@ export function HomeScreen() {
               )}
             </div>
           ) : (
-            <div style={{ borderRadius: 18, padding: 20, border: '1.5px dashed var(--line2)', textAlign: 'center' }}>
+            <div style={{ borderRadius: 16, padding: 20, border: '1.5px dashed var(--line2)', textAlign: 'center' }}>
               <div style={{ fontSize: 32, marginBottom: 8 }}>🏋️</div>
-              <p style={{ color: 'var(--ink)', fontWeight: 600, fontSize: 14 }}>¡Tu primera sesión te espera!</p>
+              <p style={{ color: 'var(--ink)', fontWeight: 600, fontSize: 13 }}>¡Tu primera sesión te espera!</p>
               <button
                 onClick={() => setActiveTab('rutinas')}
                 style={{ color: 'var(--acc)', fontSize: 13, fontWeight: 600, marginTop: 8, minHeight: 44, background: 'none', border: 'none', cursor: 'pointer' }}
@@ -223,12 +228,15 @@ export function HomeScreen() {
           )}
         </div>
 
+        {/* Del 1/12 al 15/1: "Tu año en el gym" */}
+        <WrappedCard />
+
         {/* En qué semana del plan estás */}
         <ProgramCard />
 
         {/* La semana: un punto por día. Relleno = entrenado, aro = planificado. */}
         <div style={{ padding: '12px 22px 0' }}>
-          <div style={{ background: 'var(--surf)', borderRadius: 14, border: '1px solid var(--line2)', padding: '12px 14px' }}>
+          <div style={{ background: 'var(--surf)', borderRadius: 16, border: '1px solid var(--line2)', padding: '12px 14px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }} role="list" aria-label="Esta semana">
               {semana.map((d) => {
                 const estado = d.hecho ? 'entrenado' : d.planificado ? (d.pasado ? 'planificado, no se hizo' : 'planificado') : 'descanso'
@@ -239,11 +247,11 @@ export function HomeScreen() {
                     <span style={{
                       width: 22, height: 22, borderRadius: 11, boxSizing: 'border-box',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      background: d.hecho ? 'var(--acc)' : 'transparent',
+                      background: d.hecho ? 'var(--good)' : 'transparent',
                       border: d.hecho ? 'none' : d.planificado ? `2px solid ${d.pasado ? 'var(--faint)' : 'var(--acc)'}` : 'none',
                     }}>
                       {!d.hecho && !d.planificado && <span style={{ width: 4, height: 4, borderRadius: 2, background: 'var(--faint)' }} />}
-                      {d.hecho && <span style={{ color: '#fff', fontSize: 11, fontWeight: 800 }}>✓</span>}
+                      {d.hecho && <span style={{ color: 'var(--bg)', fontSize: 11, fontWeight: 700 }}>✓</span>}
                     </span>
                   </div>
                 )
@@ -251,7 +259,7 @@ export function HomeScreen() {
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--line)' }}>
               <span style={{ fontSize: 12, color: 'var(--dim)' }}>
-                Racha: <b className="num" style={{ color: 'var(--ink)', fontSize: 14 }}>{streak.current}</b> {streak.current === 1 ? 'entreno seguido' : 'entrenos seguidos'}
+                Racha: <b className="num" style={{ color: 'var(--ink)', fontSize: 13 }}>{streak.current}</b> {streak.current === 1 ? 'entreno seguido' : 'entrenos seguidos'}
                 {streak.atRisk && streak.current > 0 && <span style={{ color: 'var(--acc)' }}> · entrená hoy o mañana</span>}
               </span>
               {metaSemana > 0 && (
@@ -266,6 +274,9 @@ export function HomeScreen() {
         {/* Desde el lunes, cómo fue la semana pasada */}
         <WeeklyReview />
 
+        {/* Del 1 al 7 de cada mes, cómo fue el mes pasado */}
+        <ResumenMesCard />
+
         {/* Última sesión: una línea que abre el entreno en la Agenda */}
         {lastWorkout && lastRoutine && (
           <div style={{ padding: '12px 22px 0' }}>
@@ -273,13 +284,13 @@ export function HomeScreen() {
               onClick={() => openAgendaDay(lastWorkout.startedAt)}
               style={{
                 width: '100%', display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left',
-                background: 'var(--surf)', borderRadius: 14, border: '1px solid var(--line2)',
-                padding: '12px 14px', minHeight: 52, cursor: 'pointer', fontFamily: 'inherit', color: 'var(--ink)',
+                background: 'var(--surf)', borderRadius: 12, border: '1px solid var(--line2)',
+                padding: '12px 14px', minHeight: 52, cursor: 'pointer', color: 'var(--ink)',
               }}
             >
               {lastRoutineVigente
                 ? <RoutineIcon routine={lastRoutineVigente} size={14} />
-                : <span style={{ fontSize: 18, flexShrink: 0 }}>{lastRoutine.emoji}</span>}
+                : <span style={{ fontSize: 17, flexShrink: 0 }}>{lastRoutine.emoji}</span>}
               <span style={{ flex: 1, minWidth: 0 }}>
                 <span style={{ display: 'block', fontSize: 11, color: 'var(--dim)', fontWeight: 600 }}>Última sesión · {daysAgoStr}</span>
                 <span style={{ display: 'block', fontSize: 13, fontWeight: 600, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -290,7 +301,7 @@ export function HomeScreen() {
                   </span>
                 </span>
               </span>
-              <span style={{ color: 'var(--faint)', fontSize: 18, flexShrink: 0 }} aria-hidden="true">›</span>
+              <span style={{ color: 'var(--mute)', fontSize: 17, flexShrink: 0 }} aria-hidden="true">›</span>
             </button>
           </div>
         )}

@@ -38,7 +38,7 @@ export function ExerciseModal({ exercise, onClose }: ExerciseModalProps) {
         <div className="flex justify-end px-4 flex-shrink-0">
           <button
             onClick={onClose}
-            style={{ color: S.dim, background: 'none', border: 'none', cursor: 'pointer', fontSize: 24, lineHeight: 1, padding: 4 }}
+            style={{ color: S.dim, background: 'none', border: 'none', cursor: 'pointer', fontSize: 26, lineHeight: 1, padding: 4 }}
           >
             ×
           </button>
@@ -64,10 +64,10 @@ export function ExerciseModal({ exercise, onClose }: ExerciseModalProps) {
             {exercise.nameEs}
           </h2>
           <div className="flex flex-wrap gap-2 mb-5">
-            <span style={{ fontSize: 11, fontWeight: 600, color: config.color, background: config.color + '20', padding: '4px 10px', borderRadius: 20, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: config.color, background: config.color + '20', padding: '4px 10px', borderRadius: 24, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
               <MuscleIcon group={exercise.muscleGroup} size={20} /> {config.label}
             </span>
-            <span style={{ fontSize: 11, fontWeight: 600, color: S.dim, background: 'rgba(255,255,255,0.07)', padding: '4px 10px', borderRadius: 20 }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: S.dim, background: 'rgba(255,255,255,0.07)', padding: '4px 10px', borderRadius: 24 }}>
               {exercise.equipment}
             </span>
           </div>
@@ -85,7 +85,7 @@ export function ExerciseModal({ exercise, onClose }: ExerciseModalProps) {
             <div className="flex-1 min-w-0">
               {primaryMuscles.length > 0 && (
                 <div className="mb-2">
-                  <p style={{ fontSize: 11, fontWeight: 700, color: S.faint, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Principal</p>
+                  <p style={{ fontSize: 11, fontWeight: 700, color: S.mute, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Principal</p>
                   <div className="flex flex-wrap gap-1.5">
                     {primaryMuscles.map((m) => (
                       <span key={m} style={{ fontSize: 11, fontWeight: 600, color: config.color, background: config.color + '15', border: `1px solid ${config.color}30`, padding: '3px 8px', borderRadius: 8 }}>
@@ -97,7 +97,7 @@ export function ExerciseModal({ exercise, onClose }: ExerciseModalProps) {
               )}
               {secondaryMuscles.length > 0 && (
                 <div>
-                  <p style={{ fontSize: 11, fontWeight: 700, color: S.faint, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Secundario</p>
+                  <p style={{ fontSize: 11, fontWeight: 700, color: S.mute, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Secundario</p>
                   <div className="flex flex-wrap gap-1.5">
                     {secondaryMuscles.map((m) => (
                       <span key={m} style={{ fontSize: 11, color: S.dim, background: 'rgba(255,255,255,0.05)', border: `1px solid ${S.line2}`, padding: '3px 8px', borderRadius: 8 }}>
@@ -113,7 +113,7 @@ export function ExerciseModal({ exercise, onClose }: ExerciseModalProps) {
           {/* Instructions */}
           {instructions.length > 0 && (
             <div className="mb-5">
-              <p style={{ fontSize: 11, fontWeight: 700, color: S.faint, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: S.mute, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
                 Instrucciones
               </p>
               <ol className="flex flex-col gap-3">
@@ -136,15 +136,15 @@ export function ExerciseModal({ exercise, onClose }: ExerciseModalProps) {
           {tips.length > 0 && (
             <div
               className="rounded-2xl p-4"
-              style={{ background: 'rgba(242,169,59,0.07)', border: '1px solid rgba(242,169,59,0.2)' }}
+              style={{ background: S.surf2, border: `1px solid ${S.line2}` }}
             >
-              <p style={{ fontSize: 11, fontWeight: 700, color: '#F2A93B', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: S.mute, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
                 💡 Tips
               </p>
               <ul className="flex flex-col gap-2">
                 {tips.map((tip, i) => (
                   <li key={i} className="flex gap-2 items-start">
-                    <span style={{ color: '#F2A93B', fontSize: 13, flexShrink: 0 }}>•</span>
+                    <span style={{ color: S.mute, fontSize: 13, flexShrink: 0 }}>•</span>
                     <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', lineHeight: 1.5 }}>{tip}</p>
                   </li>
                 ))}

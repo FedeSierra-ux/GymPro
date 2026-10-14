@@ -58,19 +58,19 @@ export function CreateExerciseCard({ name, groupHint, onCreated, label = 'Crear 
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-white text-sm truncate">{trimmed}</p>
+        <p className="font-semibold text-ink text-sm truncate">{trimmed}</p>
         <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
           <span
-            className="text-[11px] px-1.5 py-0.5 rounded font-medium inline-flex items-center gap-1"
+            className="text-micro px-1.5 py-0.5 rounded font-medium inline-flex items-center gap-1"
             style={{ color: config.color, backgroundColor: config.color + '18' }}
           >
             <MuscleIcon group={draft.group} size={18} /> {config.label}
           </span>
-          <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.35)' }}>
+          <span className="text-micro" style={{ color: 'rgba(255,255,255,0.35)' }}>
             {draft.equipment}
           </span>
           {draft.frameSlug && (
-            <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.25)' }}>
+            <span className="text-micro" style={{ color: 'rgba(255,255,255,0.25)' }}>
               · dibujo: {draft.matchedName}
             </span>
           )}
@@ -79,7 +79,7 @@ export function CreateExerciseCard({ name, groupHint, onCreated, label = 'Crear 
 
       <button
         onClick={handleCreate}
-        className="px-3 py-2 rounded-xl text-xs font-bold text-white flex-shrink-0"
+        className="px-3 py-2 rounded-xl text-xs font-bold text-on-acc flex-shrink-0"
         style={{ background: 'var(--acc)' }}
       >
         {label}

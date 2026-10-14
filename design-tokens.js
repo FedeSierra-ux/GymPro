@@ -13,8 +13,14 @@ export const colors = {
   surf2: '#1C1F2A',
   ink: '#ECEEF4',
   dim: '#8A91A3',
+  // Tercer nivel de texto (etiquetas, encabezados de tabla, ayudas): 4,3:1 a
+  // 5,1:1 según el fondo. `faint` queda sólo para trazos y cosas deshabilitadas:
+  // como texto daba 1,6:1 y no se leía.
+  mute: '#7C8396',
   faint: '#3B3F4E',
   acc: '#E8634A',
+  // Texto sobre coral: oscuro en todos los botones (5,8:1). El blanco daba 3,3:1.
+  onAcc: '#0C0E14',
   accDim: '#d4553e',
   acc2: '#F2A93B',
   good: '#34D399',
@@ -22,6 +28,46 @@ export const colors = {
   info: '#38BDF8',
   line: 'rgba(236,238,244,0.07)',
   line2: 'rgba(236,238,244,0.12)',
+}
+
+/**
+ * Colores de las rutinas: ninguno es un color de estado (coral = acción,
+ * ámbar = récord, verde = hecho, rojo = error), así una rutina no se confunde
+ * con un aviso. Son 8 para que la séptima no repita la primera.
+ */
+export const routinePalette = [
+  '#38BDF8', // celeste
+  '#A78BFA', // violeta
+  '#F472B6', // rosa
+  '#2DD4BF', // turquesa
+  '#FB923C', // naranja
+  '#818CF8', // índigo
+  '#E879F9', // fucsia
+  '#94A3B8', // gris azulado
+]
+
+/**
+ * Un color por grupo muscular, separados unos 30° en el círculo cromático:
+ * bíceps y glúteos (y espalda y cardio) ya no se confunden.
+ */
+export const muscleColors = {
+  pecho: '#F87171',
+  hombros: '#FB923C',
+  core: '#FACC15',
+  piernas: '#4ADE80',
+  gluteos: '#2DD4BF',
+  espalda: '#38BDF8',
+  biceps: '#818CF8',
+  triceps: '#C084FC',
+  cardio: '#94A3B8',
+}
+
+/** Radios: chico (chips, inputs chicos), medio (botones), grande (tarjetas), hoja (modales y hojas). */
+export const radius = {
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 24,
 }
 
 /**

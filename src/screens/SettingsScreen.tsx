@@ -16,14 +16,14 @@ function EstadoProteccion() {
   return (
     <div
       className="mb-3 rounded-xl px-3 py-2.5 flex items-start gap-2"
-      style={{ background: ok ? 'rgba(52,211,153,0.08)' : 'rgba(242,169,59,0.08)', border: `1px solid ${ok ? 'rgba(52,211,153,0.25)' : 'rgba(242,169,59,0.25)'}` }}
+      style={{ background: ok ? 'rgba(52,211,153,0.08)' : 'rgba(248,113,113,0.08)', border: `1px solid ${ok ? 'rgba(52,211,153,0.25)' : 'rgba(248,113,113,0.25)'}` }}
     >
       <span aria-hidden="true">{ok ? '🔒' : '⚠️'}</span>
       <div className="flex-1">
-        <p className="text-xs font-semibold" style={{ color: ok ? S.good : S.acc2 }}>
+        <p className="text-xs font-semibold" style={{ color: ok ? S.good : S.bad }}>
           {ok ? 'Datos protegidos' : 'Datos sin proteger'}
         </p>
-        <p className="text-[11px] text-gray-500 mt-0.5">
+        <p className="text-micro text-dim mt-0.5">
           {ok
             ? 'El navegador no los va a borrar por su cuenta. Igual conviene exportar de vez en cuando.'
             : 'El navegador podría borrarlos si le falta espacio. Instalá la app en la pantalla de inicio y exportá un backup.'}
@@ -32,7 +32,7 @@ function EstadoProteccion() {
           <button
             onClick={() => { void pedirAlmacenamientoPersistente().then(setEstado) }}
             className="mt-2 text-xs font-semibold underline"
-            style={{ color: S.acc2, background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+            style={{ color: S.ink, background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
           >
             Pedir protección de nuevo
           </button>
@@ -105,8 +105,8 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
   return (
     <div className="absolute inset-0 z-50 bg-background flex flex-col screen-enter" style={{ background: 'var(--bg)' }}>
       <div className="flex-shrink-0 px-4 safe-top pb-4 border-b border-border flex items-center gap-3">
-        <button onClick={onClose} aria-label="Volver" className="text-gray-400 text-2xl leading-none">‹</button>
-        <h1 className="text-lg font-bold text-white">Ajustes</h1>
+        <button onClick={onClose} aria-label="Volver" className="text-dim text-2xl leading-none">‹</button>
+        <h1 className="text-lg font-bold text-ink">Ajustes</h1>
       </div>
 
       <div className="flex-1 min-h-0 scroll-area px-4 py-4 flex flex-col gap-5">
@@ -114,7 +114,7 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
         <div>
           <p className="section-label mb-2">Tu nombre</p>
           <input
-            className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary text-sm"
+            className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-ink focus:border-primary text-sm"
             value={name}
             onChange={e => setName(e.target.value)}
             placeholder="Tu nombre"
@@ -124,7 +124,7 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
         {/* Meta semanal */}
         <div>
           <p className="section-label mb-2">Tu meta</p>
-          <p className="text-xs text-gray-500 mb-3">
+          <p className="text-xs text-dim mb-3">
             Cuántos días por semana te proponés entrenar. Es contra esto que Inicio mide la semana.
           </p>
           <div className="flex gap-2">
@@ -139,8 +139,8 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
                   style={{
                     minHeight: 48,
                     border: `1px solid ${activo ? 'rgba(232,99,74,0.5)' : 'rgba(236,238,244,0.12)'}`,
-                    background: activo ? 'rgba(232,99,74,0.12)' : '#161821',
-                    color: activo ? '#E8634A' : '#8A91A3',
+                    background: activo ? 'rgba(232,99,74,0.12)' : S.surf,
+                    color: activo ? S.acc : S.dim,
                   }}
                 >
                   {auto ? 'Auto' : n}
@@ -148,7 +148,7 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
               )
             })}
           </div>
-          <p className="text-xs text-gray-600 mt-2">
+          <p className="text-xs text-mute mt-2">
             {weeklyGoal === null
               ? diasDelPlan > 0
                 ? `Auto: ${diasDelPlan} por semana, los días que cargaste en tu semana tipo.`
@@ -160,7 +160,7 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
         {/* Anthropic API Key */}
         <div>
           <p className="section-label mb-2">API Key de Anthropic</p>
-          <p className="text-xs text-gray-500 mb-3">
+          <p className="text-xs text-dim mb-3">
             Necesaria para las sugerencias de IA personalizadas. Se guarda solo en tu dispositivo.{' '}
             <a
               href="https://console.anthropic.com/settings/keys"
@@ -173,7 +173,7 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
           </p>
           <input
             type="password"
-            className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary text-sm font-mono"
+            className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-ink focus:border-primary text-sm font-mono"
             value={key}
             onChange={e => setKey(e.target.value)}
             placeholder="sk-ant-..."
@@ -187,20 +187,20 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
 
         {/* Info sobre qué hace la IA */}
         <div className="bg-surface border border-border rounded-2xl p-4">
-          <p className="text-sm font-semibold text-white mb-2">¿Para qué usa la IA?</p>
+          <p className="text-sm font-semibold text-ink mb-2">¿Para qué usa la IA?</p>
           <ul className="flex flex-col gap-1.5">
             {[
               'Analiza tu progreso al terminar un entreno y te da un consejo personalizado',
               'Sugiere qué ejercicio agregar a una rutina para balancearla mejor',
             ].map((item, i) => (
-              <li key={i} className="flex gap-2 text-xs text-gray-400">
+              <li key={i} className="flex gap-2 text-xs text-dim">
                 <span className="text-primary flex-shrink-0">✓</span>
                 {item}
               </li>
             ))}
           </ul>
           {!key && (
-            <p className="text-xs text-gray-600 mt-3 pt-3 border-t border-border">
+            <p className="text-xs text-mute mt-3 pt-3 border-t border-border">
               Sin API key, la app usa sugerencias algorítmicas basadas en tu historial.
             </p>
           )}
@@ -209,7 +209,7 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
         {/* Plan de Mile */}
         <div>
           <p className="section-label mb-2">Plan de Mile</p>
-          <p className="text-xs text-gray-500 mb-3">
+          <p className="text-xs text-dim mb-3">
             Las 3 rutinas del plan (piernas, brazos y full body) con su semana tipo. Se cargan una sola vez; si ya las
             tenés, no se duplican.
           </p>
@@ -218,9 +218,9 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
             disabled={mileFaltantes === 0}
             className="w-full py-3 rounded-xl text-sm font-bold"
             style={{
-              border: `1px solid ${mileFaltantes === 0 ? 'rgba(236,238,244,0.12)' : 'rgba(242,169,59,0.28)'}`,
-              background: mileFaltantes === 0 ? '#161821' : 'rgba(242,169,59,0.08)',
-              color: mileFaltantes === 0 ? '#8A91A3' : '#F2A93B',
+              border: `1px solid ${mileFaltantes === 0 ? S.line2 : 'rgba(232,99,74,0.35)'}`,
+              background: mileFaltantes === 0 ? S.surf : 'rgba(232,99,74,0.10)',
+              color: mileFaltantes === 0 ? S.dim : S.acc,
             }}
           >
             {mileFaltantes === 0
@@ -230,7 +230,7 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
           {programa?.terminado && (
             <button
               onClick={() => { retomarPrograma(); addToast('En Inicio elegí en qué semana del plan estás', 'info') }}
-              className="w-full py-3 rounded-xl text-sm font-semibold border border-border text-white bg-surface mt-2"
+              className="w-full py-3 rounded-xl text-sm font-semibold border border-border text-ink bg-surface mt-2"
             >
               Retomar el plan por semanas
             </button>
@@ -240,12 +240,12 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
         {/* Backup */}
         <div>
           <p className="section-label mb-2">Backup de datos</p>
-          <p className="text-xs text-gray-500 mb-3">
+          <p className="text-xs text-dim mb-3">
             Tus rutinas, entrenos y récords viven solo en este dispositivo. Si vas a reinstalar la app o cambiar de
             celular, exportá un backup antes para no perderlos.
           </p>
           <EstadoProteccion />
-          <p className="text-xs text-gray-600 mb-3">
+          <p className="text-xs text-mute mb-3">
             En iPhone, Safari borra los datos de un sitio que no usás en ~7 días. Agregando la app a la pantalla de
             inicio (Compartir → Agregar a inicio) eso no pasa, pero igual conviene exportar de vez en cuando.
           </p>
@@ -253,7 +253,7 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
             <button
               onClick={handleExport}
               disabled={exportando}
-              className="flex-1 py-3 rounded-xl text-sm font-semibold border border-border text-white bg-surface"
+              className="flex-1 py-3 rounded-xl text-sm font-semibold border border-border text-ink bg-surface"
             >
               {exportando ? '⏳ Preparando...' : '⬇️ Exportar'}
             </button>
@@ -267,7 +267,7 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
             */}
             <label
               htmlFor="import-backup"
-              className="flex-1 py-3 rounded-xl text-sm font-semibold border border-border text-white bg-surface flex items-center justify-center cursor-pointer"
+              className="flex-1 py-3 rounded-xl text-sm font-semibold border border-border text-ink bg-surface flex items-center justify-center cursor-pointer"
             >
               ⬆️ Importar
               <input
@@ -298,7 +298,7 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
         <div>
           <p className="section-label mb-2">Créditos</p>
           <div className="bg-surface border border-border rounded-2xl p-4 flex flex-col gap-2">
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-dim">
               Ilustraciones de los ejercicios:{' '}
               <a href="https://bryllim.github.io/workout-guide/" target="_blank" rel="noreferrer" className="text-primary">
                 Workout Guide
@@ -313,14 +313,14 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
               </a>{' '}
               (CC BY-SA 4.0).
             </p>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-dim">
               Figuras de los músculos:{' '}
               <a href="https://github.com/HichamELBSI/react-native-body-highlighter" target="_blank" rel="noreferrer" className="text-primary">
                 react-native-body-highlighter
               </a>{' '}
               (licencia MIT), recortadas y encuadradas para cada grupo.
             </p>
-            <p className="text-xs text-gray-600">
+            <p className="text-xs text-mute">
               Cambios respecto del original: se redimensionaron a 256 px y se recomprimieron para que la app funcione
               sin conexión.
             </p>
@@ -330,7 +330,7 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
         <button
           onClick={handleSave}
           className={`w-full py-4 rounded-2xl font-bold text-base transition-all ${
-            saved ? 'bg-primary/20 text-primary border border-primary/30' : 'btn-primary-glow text-black'
+            saved ? 'bg-primary/20 text-primary border border-primary/30' : 'btn-primary'
           }`}
         >
           {saved ? '✓ Guardado' : 'Guardar cambios'}
@@ -339,8 +339,8 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
 
       {confirmarRestaurar && (
         <div role="dialog" aria-modal="true" aria-labelledby="restaurar-titulo" className="fixed inset-0 flex items-center justify-center z-50 px-6" style={{ background: 'rgba(0,0,0,0.8)' }}>
-          <Dialog label="Volver a los datos anteriores" onClose={() => setConfirmarRestaurar(false)} className="rounded-2xl p-6 w-full" style={{ background: '#161821', border: '1px solid rgba(255,255,255,0.12)', maxWidth: 340 }}>
-            <h3 id="restaurar-titulo" className="font-bold text-white text-lg mb-2">¿Volver a los datos anteriores?</h3>
+          <Dialog label="Volver a los datos anteriores" onClose={() => setConfirmarRestaurar(false)} className="rounded-2xl p-6 w-full" style={{ background: S.surf, border: '1px solid rgba(255,255,255,0.12)', maxWidth: 340 }}>
+            <h3 id="restaurar-titulo" className="font-bold text-ink text-lg mb-2">¿Volver a los datos anteriores?</h3>
             <p className="text-sm mb-5" style={{ color: 'rgba(255,255,255,0.5)' }}>
               Se descarta lo importado y vuelven los datos que tenías justo antes del último import.
             </p>
@@ -355,7 +355,7 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
               <button
                 onClick={() => { if (restorePreviousBackup()) window.location.reload() }}
                 className="flex-1 py-3 rounded-xl text-sm font-bold"
-                style={{ border: 'none', background: 'rgba(239,68,68,0.15)', color: '#f87171' }}
+                style={{ border: 'none', background: 'rgba(248,113,113,0.15)', color: S.bad }}
               >
                 Volver atrás
               </button>
@@ -366,10 +366,10 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
 
       {pendingImportFile && (
         <div className="fixed inset-0 flex items-center justify-center z-50 px-6" style={{ background: 'rgba(0,0,0,0.8)' }}>
-          <Dialog label="Importar backup" onClose={() => setPendingImportFile(null)} className="rounded-2xl p-6 w-full" style={{ background: '#161821', border: '1px solid rgba(255,255,255,0.12)', maxWidth: 340 }}>
-            <h3 className="font-bold text-white text-lg mb-2">¿Importar este backup?</h3>
+          <Dialog label="Importar backup" onClose={() => setPendingImportFile(null)} className="rounded-2xl p-6 w-full" style={{ background: S.surf, border: '1px solid rgba(255,255,255,0.12)', maxWidth: 340 }}>
+            <h3 className="font-bold text-ink text-lg mb-2">¿Importar este backup?</h3>
             <p className="text-sm mb-5" style={{ color: 'rgba(255,255,255,0.5)' }}>
-              Esto reemplaza <strong className="text-white">todos</strong> tus datos actuales (rutinas, entrenos, récords) por los del archivo. Se guarda una copia de lo que tenés ahora para poder volver atrás desde acá.
+              Esto reemplaza <strong className="text-ink">todos</strong> tus datos actuales (rutinas, entrenos, récords) por los del archivo. Se guarda una copia de lo que tenés ahora para poder volver atrás desde acá.
             </p>
             <div className="flex gap-3">
               <button
@@ -382,7 +382,7 @@ export function SettingsScreen({ onClose }: { onClose: () => void }) {
               <button
                 onClick={handleConfirmImport}
                 className="flex-1 py-3 rounded-xl text-sm font-bold"
-                style={{ border: 'none', background: 'rgba(239,68,68,0.15)', color: '#f87171' }}
+                style={{ border: 'none', background: 'rgba(248,113,113,0.15)', color: S.bad }}
               >
                 Reemplazar datos
               </button>

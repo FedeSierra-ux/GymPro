@@ -43,9 +43,9 @@ export function BackupReminder() {
         <button
           onClick={() => setActiveTab('perfil')}
           style={{
-            flexShrink: 0, minHeight: 36, padding: '0 10px', borderRadius: 10,
+            flexShrink: 0, minHeight: 36, padding: '0 10px', borderRadius: 12,
             background: 'none', border: 'none',
-            color: S.acc, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+            color: S.acc, fontSize: 12, fontWeight: 700, cursor: 'pointer',
           }}
         >
           Exportar
@@ -55,7 +55,7 @@ export function BackupReminder() {
           aria-label="Ocultar el recordatorio"
           style={{
             flexShrink: 0, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'none', border: 'none', color: S.faint, fontSize: 15, cursor: 'pointer',
+            background: 'none', border: 'none', color: S.mute, fontSize: 15, cursor: 'pointer',
           }}
         >×</button>
       </div>
