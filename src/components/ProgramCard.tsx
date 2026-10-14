@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useHoy } from '../utils/useHoy'
 import { useStore } from '../store/useStore'
 import { tieneVariante, VARIANTE_LABEL } from '../utils/routineVariant'
 import { SEMANAS_PROGRAMA, SEMANA_CAMBIO, semanaDelPrograma } from '../utils/program'
@@ -11,14 +12,17 @@ const fechaCorta = (ts: number) => new Date(ts).toLocaleDateString('es-AR', { da
  */
 export function ProgramCard() {
   const { routines, programa, fijarSemanaPrograma, sincronizarPrograma, terminarPrograma } = useStore()
-  const [nowTs] = useState(() => Date.now())
+  const nowTs = useHoy()
   const [eligiendo, setEligiendo] = useState(false)
 
   useEffect(() => { sincronizarPrograma() }, [sincronizarPrograma])
 
   if (!routines.some(tieneVariante) || programa?.terminado) return null
 
-  const semana = programa ? semanaDelPrograma(programa.inicio, nowTs) : null
+  // El domingo la tarjeta ya habla de la semana que arranca mañana: es el día
+  // en que uno se organiza, y la semana que se elige ese día es la que viene.
+  const arrancaManana = programa != null && new Date(nowTs).getDay() === 0
+  const semana = programa ? semanaDelPrograma(programa.inicio, arrancaManana ? nowTs + 86400000 : nowTs) : null
   const terminado = semana != null && semana > SEMANAS_PROGRAMA
 
   const chips = (
@@ -101,7 +105,7 @@ export function ProgramCard() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
             <span style={titulo}>Tu plan</span>
             <span style={{ fontSize: 12, color: 'var(--dim)' }}>
-              Semana <b className="num" style={{ color: 'var(--ink)', fontSize: 14 }}>{semana}</b> de <span className="num">{SEMANAS_PROGRAMA}</span>
+              {arrancaManana && 'Desde mañana · '}Semana <b className="num" style={{ color: 'var(--ink)', fontSize: 14 }}>{semana}</b> de <span className="num">{SEMANAS_PROGRAMA}</span>
             </span>
           </div>
           <div aria-hidden="true" style={{ display: 'grid', gridTemplateColumns: `repeat(${SEMANAS_PROGRAMA}, 1fr)`, gap: 4, marginTop: 8 }}>

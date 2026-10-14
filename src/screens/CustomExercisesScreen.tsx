@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Dialog } from '../components/Dialog'
 import { useStore } from '../store/useStore'
 import { muscleGroupConfig } from '../data/muscleGroups'
 import { ExerciseThumbnail } from '../components/ExerciseThumbnail'
@@ -17,7 +18,9 @@ interface Props {
 }
 
 export function CustomExercisesScreen({ onClose }: Props) {
-  const { customExercises, routines, createCustomExercise, updateCustomExercise, deleteCustomExercise } = useStore()
+  const { customExercises: todosLosPropios, routines, workouts, createCustomExercise, updateCustomExercise, deleteCustomExercise, restoreCustomExercise, addUndoToast } = useStore()
+  // Los borrados quedan archivados para el historial, pero acá no se muestran.
+  const customExercises = todosLosPropios.filter((e) => !e.archived)
 
   const [showForm, setShowForm] = useState(false)
   /** id del ejercicio que se está editando, o null si es uno nuevo. */
@@ -265,16 +268,18 @@ export function CustomExercisesScreen({ onClose }: Props) {
 
       {confirmDelete && (() => {
         const usedInRoutines = routines.filter(r => r.exercises.some(re => re.exerciseId === confirmDelete.id))
+        const sesiones = workouts.filter(w => w.finishedAt && w.exercises.some(e => e.exerciseId === confirmDelete.id && e.sets.length > 0)).length
         return (
           <div className="fixed inset-0 flex items-center justify-center z-50 px-6" style={{ background: 'rgba(0,0,0,0.8)' }} onClick={() => setConfirmDelete(null)}>
-            <div
+            <Dialog label="Eliminar ejercicio" onClose={() => setConfirmDelete(null)}
               className="rounded-2xl p-6 w-full"
               style={{ background: '#161821', border: '1px solid rgba(255,255,255,0.12)', maxWidth: 340 }}
               onClick={(e) => e.stopPropagation()}
             >
               <h3 className="font-bold text-white text-lg mb-2">¿Eliminar este ejercicio?</h3>
               <p className="text-sm mb-1" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                Se eliminará <strong className="text-white">{confirmDelete.nameEs}</strong> definitivamente.
+                <strong className="text-white">{confirmDelete.nameEs}</strong> deja de aparecer para elegir.
+                {sesiones > 0 && ` Las ${sesiones === 1 ? 'una sesión' : `${sesiones} sesiones`} que ya hiciste quedan en el historial.`}
               </p>
               {usedInRoutines.length > 0 && (
                 <p className="text-xs mb-4" style={{ color: 'rgba(239,68,68,0.8)' }}>
@@ -290,14 +295,20 @@ export function CustomExercisesScreen({ onClose }: Props) {
                   Cancelar
                 </button>
                 <button
-                  onClick={() => { deleteCustomExercise(confirmDelete.id); setConfirmDelete(null) }}
+                  onClick={() => {
+                    const ejercicio = confirmDelete
+                    const rutinasAntes = usedInRoutines
+                    deleteCustomExercise(ejercicio.id)
+                    setConfirmDelete(null)
+                    addUndoToast(`Eliminaste ${ejercicio.nameEs}`, () => restoreCustomExercise(ejercicio, rutinasAntes))
+                  }}
                   className="flex-1 py-3 rounded-xl text-sm font-bold"
                   style={{ border: 'none', background: 'rgba(239,68,68,0.15)', color: '#f87171' }}
                 >
                   Eliminar
                 </button>
               </div>
-            </div>
+            </Dialog>
           </div>
         )
       })()}

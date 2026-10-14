@@ -159,7 +159,7 @@ Fuente: [Plotkin et al., 2023](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1059
 
 Un agarre mayor a 1,5 veces el ancho biacromial se asocia a más riesgo de hombro
 (inestabilidad anterior, osteólisis distal de clavícula, rotura de pectoral).
-Reducirlo a ≤1,5 no cambia el reclutamiento muscular y afecta el 1RM en torno a
+Reducirlo a ≤1,5 no cambia el reclutamiento muscular y afecta la fuerza máxima en torno a
 un 5%. Los codos muy abiertos activan algo más la porción esternocostal pero
 dejan el hombro en posición vulnerable.
 

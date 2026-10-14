@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useHoy } from '../utils/useHoy'
 import { useStore, useAllExercises } from '../store/useStore'
 import { muscleGroupConfig } from '../data/muscleGroups'
 import { ExerciseHistorySheet } from '../components/ExerciseHistorySheet'
@@ -383,7 +384,7 @@ export function ProgresoScreen() {
   const [historyExerciseId, setHistoryExerciseId] = useState<string | null>(null)
   const [abierta, setAbierta] = useState<string | null>(null)
   // Una sola lectura del reloj por montaje: el render tiene que ser puro.
-  const [nowTs] = useState(() => Date.now())
+  const nowTs = useHoy()
 
   const dias = PERIODOS.find(p => p[0] === period)?.[2] ?? 92
   const etiquetaPeriodo = PERIODOS.find(p => p[0] === period)?.[1] ?? ''

@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
+import { Dialog } from '../components/Dialog'
+import { useHoy } from '../utils/useHoy'
 import { useStore, useAllExercises } from '../store/useStore'
 import { useWorkoutStore } from '../stores/workoutStore'
 import { isDurationExercise, durationUnit, formatDuration, totalSeconds, fromSeconds, toSeconds } from '../utils/duration'
-import { toDateInputValue } from '../utils/dates'
+import { fromDateInputValue, toDateInputValue } from '../utils/dates'
 import { formatKg, formatLoad } from '../utils/format'
 import { decimalInputProps, integerInputProps, parseDecimal } from '../utils/numberInput'
 import { getWorkoutStreak } from '../utils/streak'
@@ -66,7 +68,7 @@ function DaySheet({
   }
   return (
     <div className="fixed inset-0 bg-black/80 z-50 flex items-end" onClick={onClose}>
-      <div
+      <Dialog label="Día del calendario" onClose={onClose}
         className="w-full rounded-t-3xl px-4 pt-4 pb-8 max-h-[80vh] flex flex-col sheet-enter"
         style={{ background: S.surf, borderTop: `1px solid ${S.line2}` }}
         onClick={(e) => e.stopPropagation()}
@@ -77,7 +79,7 @@ function DaySheet({
             <h3 style={{ fontWeight: 700, color: S.ink, fontSize: 17, textTransform: 'capitalize' }}>{dateLabel}</h3>
             {isToday && <p style={{ color: S.acc, fontSize: 12, fontWeight: 600 }}>Hoy</p>}
           </div>
-          <button onClick={onClose} style={{ color: S.dim, fontSize: 22, lineHeight: 1, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}>×</button>
+          <button onClick={onClose} aria-label="Cerrar" style={{ color: S.dim, fontSize: 22, lineHeight: 1, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}>×</button>
         </div>
         {showRoutinePicker ? (
           <>
@@ -166,7 +168,7 @@ function DaySheet({
             )}
           </>
         )}
-      </div>
+      </Dialog>
       {editingWorkout && (
         <EditWorkoutSheet workout={editingWorkout} onClose={() => setEditingWorkout(null)} />
       )}
@@ -180,7 +182,7 @@ function EditWorkoutSheet({ workout, onClose }: { workout: Workout; onClose: () 
 
   const [dateStr, setDateStr] = useState(toDateInputValue(workout.startedAt))
   const [durationStr, setDurationStr] = useState(String(workout.durationMin ?? 0))
-  const [draftExercises, setDraftExercises] = useState(
+  const [inicial] = useState(() =>
     workout.exercises.map((we) => ({
       exerciseId: we.exerciseId,
       sets: we.sets.map((s) => ({
@@ -188,9 +190,19 @@ function EditWorkoutSheet({ workout, onClose }: { workout: Workout; onClose: () 
         reps: String(s.reps),
         isWarmup: s.isWarmup,
         duration: s.durationSec ? fromSeconds(s.durationSec, durationUnit(exercises.find(e => e.id === we.exerciseId))) : '',
+        completedAt: s.completedAt as number | undefined,
       })),
     }))
   )
+  const [draftExercises, setDraftExercises] = useState(inicial)
+  const [confirmarDescarte, setConfirmarDescarte] = useState(false)
+  const hayCambios = dateStr !== toDateInputValue(workout.startedAt)
+    || durationStr !== String(workout.durationMin ?? 0)
+    || JSON.stringify(draftExercises) !== JSON.stringify(inicial)
+  const hoyStr = toDateInputValue(useHoy())
+  const fechaValida = fromDateInputValue(dateStr) !== null && dateStr <= hoyStr
+  // Tocar afuera descartaba todo sin preguntar.
+  const cerrar = () => { if (hayCambios) setConfirmarDescarte(true); else onClose() }
 
   const setValue = (exIdx: number, setIdx: number, field: 'kg' | 'reps' | 'duration', value: string) => {
     setDraftExercises((prev) =>
@@ -213,6 +225,7 @@ function EditWorkoutSheet({ workout, onClose }: { workout: Workout; onClose: () 
             reps: last?.reps ?? '0',
             isWarmup: undefined as boolean | undefined,
             duration: last?.duration ?? '',
+            completedAt: undefined as number | undefined,
           }],
         }
       })
@@ -226,9 +239,15 @@ function EditWorkoutSheet({ workout, onClose }: { workout: Workout; onClose: () 
   }
 
   const handleSave = () => {
-    const [y, m, d] = dateStr.split('-').map(Number)
+    // Si el selector de fecha quedó vacío ("Borrar" en iOS y Android) daba NaN,
+    // y el entreno desaparecía de todas las vistas sin poder editarse más.
+    const dia = fromDateInputValue(dateStr)
+    if (dia === null || !fechaValida) return
+    const fecha = new Date(dia)
     const original = new Date(workout.startedAt)
-    const newStartedAt = new Date(y, m - 1, d, original.getHours(), original.getMinutes(), original.getSeconds()).getTime()
+    const newStartedAt = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate(), original.getHours(), original.getMinutes(), original.getSeconds()).getTime()
+    if (!Number.isFinite(newStartedAt)) return
+    const corrimiento = newStartedAt - workout.startedAt
     const durationMin = Math.max(0, Math.round(parseDecimal(durationStr)) || 0)
     const finishedAt = newStartedAt + durationMin * 60000
     const newExercises = draftExercises.map((ex) => ({
@@ -238,7 +257,8 @@ function EditWorkoutSheet({ workout, onClose }: { workout: Workout; onClose: () 
         .map((s) => ({
           kg: parseDecimal(s.kg) || 0,
           reps: parseInt(s.reps.replace(/[^0-9]/g, '')) || 0,
-          completedAt: finishedAt,
+          // La hora real de cada serie se conserva (corrida si cambió el día).
+          completedAt: s.completedAt ? Math.min(finishedAt, s.completedAt + corrimiento) : finishedAt,
           isWarmup: s.isWarmup,
           durationSec: s.duration
             ? toSeconds(s.duration, durationUnit(exercises.find(e => e.id === ex.exerciseId)))
@@ -257,8 +277,8 @@ function EditWorkoutSheet({ workout, onClose }: { workout: Workout; onClose: () 
   }
 
   return (
-    <div className="fixed inset-0 bg-black/80 z-50 flex items-end" onClick={(e) => { e.stopPropagation(); onClose() }}>
-      <div
+    <div className="fixed inset-0 bg-black/80 z-50 flex items-end" onClick={(e) => { e.stopPropagation(); cerrar() }}>
+      <Dialog label="Editar entreno" onClose={cerrar}
         className="w-full rounded-t-3xl px-4 pt-4 pb-8 max-h-[85vh] flex flex-col sheet-enter"
         style={{ background: S.surf, borderTop: `1px solid ${S.line2}` }}
         onClick={(e) => e.stopPropagation()}
@@ -266,14 +286,22 @@ function EditWorkoutSheet({ workout, onClose }: { workout: Workout; onClose: () 
         <div style={{ width: 40, height: 4, background: S.surf2, borderRadius: 2, margin: '0 auto 16px' }} />
         <div className="flex items-center justify-between mb-4 flex-shrink-0">
           <h3 style={{ fontWeight: 700, color: S.ink, fontSize: 17 }}><RoutineBadge routineId={workout.routineId} size={16} />Editar entreno</h3>
-          <button onClick={onClose} style={{ color: S.dim, fontSize: 22, lineHeight: 1, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}>×</button>
+          <button onClick={cerrar} aria-label="Cerrar" style={{ color: S.dim, fontSize: 22, lineHeight: 1, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}>×</button>
         </div>
+        {confirmarDescarte && (
+          <div role="alert" className="flex items-center gap-2 mb-3 flex-shrink-0" style={{ background: S.surf2, border: `1px solid ${S.line2}`, borderRadius: 12, padding: '8px 10px' }}>
+            <span style={{ flex: 1, fontSize: 13, color: S.ink }}>Tenés cambios sin guardar</span>
+            <button onClick={() => setConfirmarDescarte(false)} style={{ minHeight: 36, padding: '0 10px', borderRadius: 10, border: `1px solid ${S.line2}`, background: 'none', color: S.ink, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Seguir editando</button>
+            <button onClick={onClose} style={{ minHeight: 36, padding: '0 10px', borderRadius: 10, border: 'none', background: 'rgba(239,68,68,0.15)', color: '#f87171', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Descartar</button>
+          </div>
+        )}
 
         <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-4">
           <div className="flex gap-3">
             <div className="flex-1">
               <label style={{ fontSize: 11, color: S.dim, fontWeight: 600 }}>Fecha</label>
-              <input type="date" value={dateStr} onChange={(e) => setDateStr(e.target.value)}
+              <input type="date" value={dateStr} max={hoyStr} onChange={(e) => setDateStr(e.target.value)}
+                aria-invalid={!fechaValida}
                 style={{ width: '100%', marginTop: 4, background: S.surf2, border: `1px solid ${S.line2}`, borderRadius: 10, padding: '10px 12px', fontSize: 16, color: S.ink, fontFamily: 'inherit' }} />
             </div>
             <div style={{ width: 120 }}>
@@ -327,14 +355,19 @@ function EditWorkoutSheet({ workout, onClose }: { workout: Workout; onClose: () 
           })}
         </div>
 
-        <button onClick={handleSave} style={{
+        {!fechaValida && (
+          <p role="alert" style={{ marginTop: 12, fontSize: 12, color: '#f87171', flexShrink: 0 }}>
+            Elegí una fecha de hoy o anterior para poder guardar.
+          </p>
+        )}
+        <button onClick={handleSave} disabled={!fechaValida} style={{
           marginTop: 16, width: '100%', padding: '14px 0', borderRadius: 14,
-          background: S.acc, border: 'none', color: '#fff',
-          fontFamily: 'DM Sans, system-ui, sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer', flexShrink: 0,
+          background: S.acc, border: 'none', color: '#fff', opacity: fechaValida ? 1 : 0.4,
+          fontFamily: 'DM Sans, system-ui, sans-serif', fontWeight: 700, fontSize: 14, cursor: fechaValida ? 'pointer' : 'default', flexShrink: 0,
         }}>
           Guardar cambios
         </button>
-      </div>
+      </Dialog>
     </div>
   )
 }
@@ -382,7 +415,7 @@ function WeekPlanDayRow({
         style={{
           minHeight: 36, background: 'transparent', fontFamily: 'DM Sans, system-ui, sans-serif',
           // Aro con el color de la rutina, como en el calendario de arriba; el descanso, tenue.
-          border: routine ? `1.5px solid ${routineColor(routine.id, routines.map(r => r.id))}` : '1.5px solid transparent',
+          border: routine ? `1.5px solid ${routineColor(routine.id, routines)}` : '1.5px solid transparent',
           color: routine ? S.ink : S.faint, fontWeight: routine ? 700 : 500,
         }}>
         <option value="" style={{ background: S.surf, color: S.dim }}>Descanso</option>
@@ -421,7 +454,7 @@ function WeekPlanner() {
   const { weekPlan, weekOverrides, setWeekPlanDay, setWeekOverrideDay, clearWeekOverride, routines } = useStore()
   const [modo, setModo] = useState<'default' | 'semana'>('default')
   const [offset, setOffset] = useState(0) // 0 = esta semana
-  const [nowTs] = useState(() => Date.now())
+  const nowTs = useHoy()
 
   const lunes = new Date(lunesDe(nowTs))
   lunes.setDate(lunes.getDate() + offset * 7)
@@ -552,7 +585,7 @@ function CalendarioTab({ year, month }: { year: number; month: number }) {
   }
 
   // Una sola lectura del reloj por montaje: el render tiene que ser puro.
-  const [nowTs] = useState(() => Date.now())
+  const nowTs = useHoy()
   const finishedWorkouts = workouts.filter(w => w.finishedAt)
   const routineIdsVivos = routines.map(r => r.id)
   const plannedDows = (d: Date) => plannedDowSet(planDeSemana(weekPlan, weekOverrides, d.getTime()), routineIdsVivos).has((d.getDay() + 6) % 7)
@@ -613,7 +646,7 @@ function CalendarioTab({ year, month }: { year: number; month: number }) {
         const routine = routines.find((r) => r.id === menuWorkout.routineId) ?? getArchivedRoutineName(menuWorkout.routineId)
         return (
           <div className="fixed inset-0 z-50 flex items-end" style={{ background: 'rgba(0,0,0,0.8)' }} onClick={() => setMenuWorkout(null)}>
-            <div className="w-full rounded-t-3xl px-4 pt-4 pb-8 sheet-enter"
+            <Dialog label="Opciones del entreno" onClose={() => setMenuWorkout(null)} className="w-full rounded-t-3xl px-4 pt-4 pb-8 sheet-enter"
               style={{ background: S.surf, borderTop: `1px solid ${S.line2}` }}
               onClick={(e) => e.stopPropagation()}>
               <div style={{ width: 40, height: 4, background: S.surf2, borderRadius: 2, margin: '0 auto 16px' }} />
@@ -633,7 +666,7 @@ function CalendarioTab({ year, month }: { year: number; month: number }) {
                   Cancelar
                 </button>
               </div>
-            </div>
+            </Dialog>
           </div>
         )
       })()}
@@ -669,7 +702,7 @@ function RecordsTab() {
   const [expandedPr, setExpandedPr] = useState<string | null>(null)
   // Últimos 30 días en vez del mes calendario: todos los días 1 este contador
   // volvía a cero aunque vinieras rompiendo marcas.
-  const [nowTs] = useState(() => Date.now())
+  const nowTs = useHoy()
   const startOfMonth = nowTs - 30 * 86400000
   const monthPrs = prs.filter((p) => p.date >= startOfMonth)
 

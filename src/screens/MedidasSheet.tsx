@@ -94,7 +94,7 @@ export function MedidasSheet({ onClose }: { onClose: () => void }) {
             <div className="flex items-baseline justify-between gap-3" style={{ marginBottom: 12 }}>
               <div>
                 <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: -0.6, color: S.ink, lineHeight: 1 }}>
-                  {ultimo ? `${ultimo.value}` : '—'}
+                  {ultimo ? ultimo.value.toLocaleString('es-AR', { maximumFractionDigits: 1 }) : '—'}
                   <span style={{ fontSize: 14, color: S.dim, fontWeight: 500 }}> {campo.unidad}</span>
                 </div>
                 <div style={{ fontSize: 11, color: S.dim, marginTop: 4 }}>
@@ -105,7 +105,7 @@ export function MedidasSheet({ onClose }: { onClose: () => void }) {
               </div>
               {serie.length > 1 && delta !== 0 && (
                 <div style={{ fontSize: 13, fontWeight: 700, color: delta > 0 ? S.acc2 : S.info }}>
-                  {delta > 0 ? '↑' : '↓'} {Math.abs(delta)} {campo.unidad}
+                  {delta > 0 ? '↑' : '↓'} {Math.abs(delta).toLocaleString('es-AR', { maximumFractionDigits: 1 })} {campo.unidad}
                   <div style={{ fontSize: 11, color: S.faint, fontWeight: 500, textAlign: 'right' }}>desde el inicio</div>
                 </div>
               )}
@@ -122,7 +122,8 @@ export function MedidasSheet({ onClose }: { onClose: () => void }) {
           </div>
 
           {/* Qué medida se mira */}
-          <div className="flex gap-2" style={{ overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
+          {/* flexShrink 0: dentro de la columna con scroll la fila se achicaba a 2 px. */}
+          <div className="flex gap-2" style={{ overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2, flexShrink: 0 }}>
             {CAMPOS.map((c) => {
               const activo = verCampo === c.key
               const tiene = measures.some((m) => typeof m[c.key] === 'number')

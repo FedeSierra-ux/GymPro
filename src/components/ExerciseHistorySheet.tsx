@@ -3,19 +3,51 @@ import { useStore, useAllExercises } from '../store/useStore'
 import { muscleGroupConfig } from '../data/muscleGroups'
 import { ExerciseThumbnail } from './ExerciseThumbnail'
 import { S } from '../theme'
-import { estimate1RM } from '../utils/oneRM'
 import { MuscleIcon } from './MuscleIcon'
 import { formatKg } from '../utils/format'
+import { formatDuration } from '../utils/duration'
+import { recordKindFor, type RecordKind } from '../utils/records'
 
 
 
 interface SessionEntry {
   date: number
-  bestKg: number
-  bestReps: number
+  /** La mejor serie de la sesión, en la unidad del ejercicio. */
+  best: SetValue
   totalSets: number
-  totalVolume: number // Σ kg×reps de las series efectivas
-  sets: { kg: number; reps: number }[]
+  sets: SetValue[]
+}
+
+interface SetValue { kg: number; reps: number; durationSec?: number }
+
+/**
+ * Cuánto pesa una serie según cómo se mide el ejercicio. Con kilos manda el
+ * peso y a igual peso las reps; a peso corporal, las reps; por tiempo, los
+ * segundos. Antes sólo contaban las series con kilos, y planchas, cinta y
+ * abdominales decían "Todavía no registraste este ejercicio".
+ */
+function puntaje(kind: RecordKind, s: SetValue): number {
+  if (kind === 'kg') return s.kg * 1000 + s.reps
+  if (kind === 'reps') return s.reps
+  return s.durationSec ?? 0
+}
+
+/** El valor que se grafica: kilos, reps o segundos. */
+function valor(kind: RecordKind, s: SetValue): number {
+  if (kind === 'kg') return s.kg
+  if (kind === 'reps') return s.reps
+  return s.durationSec ?? 0
+}
+
+function textoSerie(kind: RecordKind, s: SetValue): string {
+  if (kind === 'tiempo') return formatDuration(s.durationSec ?? 0)
+  if (kind === 'reps') return s.kg > 0 ? `${formatKg(s.kg)}kg × ${s.reps}` : `${s.reps} reps`
+  return `${formatKg(s.kg)}×${s.reps}`
+}
+
+function textoValor(kind: RecordKind, v: number): string {
+  if (kind === 'tiempo') return formatDuration(v)
+  return kind === 'kg' ? formatKg(v) : String(v)
 }
 
 export function ExerciseHistorySheet({ exerciseId, onClose }: { exerciseId: string; onClose: () => void }) {
@@ -24,40 +56,41 @@ export function ExerciseHistorySheet({ exerciseId, onClose }: { exerciseId: stri
   const exercise = allExercises.find((e) => e.id === exerciseId)
   const pr = prs.find((p) => p.exerciseId === exerciseId)
 
-  const sessions = useMemo<SessionEntry[]>(() => {
+  const { sessions, kind } = useMemo(() => {
+    const efectivas: SetValue[] = []
+    for (const w of workouts) {
+      if (!w.finishedAt) continue
+      const wex = w.exercises.find((e) => e.exerciseId === exerciseId)
+      if (wex) efectivas.push(...wex.sets.filter((s) => !s.isWarmup))
+    }
+    const kind = recordKindFor(exercise, efectivas)
     const entries: SessionEntry[] = []
     for (const w of workouts) {
       if (!w.finishedAt) continue
       const wex = w.exercises.find((e) => e.exerciseId === exerciseId)
       if (!wex) continue
-      const working = wex.sets.filter((s) => !s.isWarmup && s.kg > 0)
+      const working = wex.sets.filter((s) => !s.isWarmup && valor(kind, s) > 0)
       if (working.length === 0) continue
-      let bestKg = 0
-      let bestReps = 0
-      let totalVolume = 0
-      for (const s of working) {
-        totalVolume += s.kg * s.reps
-        if (s.kg > bestKg || (s.kg === bestKg && s.reps > bestReps)) {
-          bestKg = s.kg
-          bestReps = s.reps
-        }
-      }
+      const best = working.reduce((a, b) => (puntaje(kind, b) > puntaje(kind, a) ? b : a))
       entries.push({
         date: w.startedAt,
-        bestKg,
-        bestReps,
+        best: { kg: best.kg, reps: best.reps, durationSec: best.durationSec },
         totalSets: working.length,
-        totalVolume,
-        sets: working.map((s) => ({ kg: s.kg, reps: s.reps })),
+        sets: working.map((s) => ({ kg: s.kg, reps: s.reps, durationSec: s.durationSec })),
       })
     }
-    return entries.sort((a, b) => a.date - b.date)
-  }, [workouts, exerciseId])
+    return { sessions: entries.sort((a, b) => a.date - b.date), kind }
+  }, [workouts, exerciseId, exercise])
 
-  const maxKg = Math.max(...sessions.map((s) => s.bestKg), 1)
-  const firstKg = sessions[0]?.bestKg ?? 0
-  const currentKg = sessions[sessions.length - 1]?.bestKg ?? 0
-  const change = currentKg - firstKg
+  const unidad = kind === 'kg' ? 'kg' : kind === 'reps' ? 'reps' : ''
+  const maxValor = Math.max(...sessions.map((s) => valor(kind, s.best)), 1)
+  const firstValor = sessions[0] ? valor(kind, sessions[0].best) : 0
+  const currentValor = sessions.length ? valor(kind, sessions[sessions.length - 1].best) : 0
+  const change = currentValor - firstValor
+  const textoRecord = !pr ? '—'
+    : kind === 'tiempo' ? formatDuration(pr.durationSec ?? 0)
+    : kind === 'reps' ? `${pr.reps}`
+    : `${formatKg(pr.kg)}×${pr.reps}`
   const config = exercise ? muscleGroupConfig[exercise.muscleGroup] : null
 
   const fmtDate = (ms: number) =>
@@ -107,18 +140,18 @@ export function ExerciseHistorySheet({ exerciseId, onClose }: { exerciseId: stri
             {/* Resumen */}
             <div className="flex gap-2" style={{ marginBottom: 16 }}>
               <div style={{ flex: 1, background: S.surf, border: `1px solid ${S.line2}`, borderRadius: 14, padding: '12px 10px', textAlign: 'center' }}>
-                <div className="num" style={{ fontSize: 22, fontWeight: 700, color: S.ink }}>{formatKg(currentKg)}<span style={{ fontSize: 12, color: S.dim, fontWeight: 500 }}>kg</span></div>
-                <div style={{ fontSize: 11, color: S.dim, marginTop: 2 }}>Máx actual</div>
+                <div className="num" style={{ fontSize: 22, fontWeight: 700, color: S.ink }}>{textoValor(kind, currentValor)}<span style={{ fontSize: 12, color: S.dim, fontWeight: 500 }}>{unidad}</span></div>
+                <div style={{ fontSize: 11, color: S.dim, marginTop: 2 }}>Última vez</div>
               </div>
               <div style={{ flex: 1, background: S.surf, border: `1px solid ${S.line2}`, borderRadius: 14, padding: '12px 10px', textAlign: 'center' }}>
                 <div className="num" style={{ fontSize: 22, fontWeight: 700, color: S.acc2 }}>
-                  {pr ? `${formatKg(pr.kg)}×${pr.reps}` : '—'}
+                  {textoRecord}
                 </div>
                 <div style={{ fontSize: 11, color: S.dim, marginTop: 2 }}>🏆 Récord</div>
               </div>
               <div style={{ flex: 1, background: S.surf, border: `1px solid ${S.line2}`, borderRadius: 14, padding: '12px 10px', textAlign: 'center' }}>
                 <div className="num" style={{ fontSize: 22, fontWeight: 700, color: change > 0 ? S.good : change < 0 ? '#f87171' : S.ink }}>
-                  {change > 0 ? '+' : ''}{formatKg(change)}<span style={{ fontSize: 12, color: S.dim, fontWeight: 500 }}>kg</span>
+                  {change > 0 ? '+' : change < 0 ? '−' : ''}{textoValor(kind, Math.abs(change))}<span style={{ fontSize: 12, color: S.dim, fontWeight: 500 }}>{unidad}</span>
                 </div>
                 <div style={{ fontSize: 11, color: S.dim, marginTop: 2 }}>Progreso</div>
               </div>
@@ -126,14 +159,17 @@ export function ExerciseHistorySheet({ exerciseId, onClose }: { exerciseId: stri
 
             {/* Gráfico de tendencia (mejor kg por sesión) */}
             <div style={{ background: S.surf, border: `1px solid ${S.line2}`, borderRadius: 16, padding: '16px 14px', marginBottom: 16 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: S.ink, marginBottom: 12 }}>Mejor peso por sesión</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: S.ink, marginBottom: 12 }}>
+                {kind === 'kg' ? 'Mejor peso por sesión' : kind === 'reps' ? 'Más reps por sesión' : 'Mejor tiempo por sesión'}
+              </div>
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 90 }}>
                 {sessions.slice(-16).map((s, i, arr) => {
                   const isLast = i === arr.length - 1
-                  const h = Math.max(Math.round((s.bestKg / maxKg) * 100), 8)
+                  const v = valor(kind, s.best)
+                  const h = Math.max(Math.round((v / maxValor) * 100), 8)
                   return (
-                    <div key={s.date} className="flex-1 flex flex-col items-center justify-end" style={{ minWidth: 0 }} title={`${fmtDate(s.date)} · ${formatKg(s.bestKg)}kg × ${s.bestReps}`}>
-                      <div className="num" style={{ fontSize: 11, color: isLast ? S.ink : S.faint, fontWeight: 600, marginBottom: 3 }}>{formatKg(s.bestKg)}</div>
+                    <div key={s.date} className="flex-1 flex flex-col items-center justify-end" style={{ minWidth: 0 }} title={`${fmtDate(s.date)} · ${textoSerie(kind, s.best)}`}>
+                      <div className="num" style={{ fontSize: 11, color: isLast ? S.ink : S.faint, fontWeight: 600, marginBottom: 3 }}>{kind === 'tiempo' ? Math.round(v) : textoValor(kind, v)}</div>
                       <div style={{
                         width: '100%', height: `${h}%`, minHeight: 4, borderRadius: '4px 4px 0 0',
                         background: isLast ? S.acc : 'rgba(232,99,74,0.28)', transition: 'height 0.4s ease',
@@ -154,12 +190,12 @@ export function ExerciseHistorySheet({ exerciseId, onClose }: { exerciseId: stri
                   <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
                     <span style={{ fontSize: 13, fontWeight: 700, color: S.ink, textTransform: 'capitalize' }}>{fmtDate(s.date)}</span>
                     <span className="num" style={{ fontSize: 11, color: S.dim }}>
-                      {formatKg(s.bestKg)}kg × {s.bestReps} · ~1RM {formatKg(estimate1RM(s.bestKg, s.bestReps))}kg
+                      {kind === 'kg' ? `${formatKg(s.best.kg)}kg × ${s.best.reps}` : textoSerie(kind, s.best)}
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {s.sets.map((set, idx) => {
-                      const isBest = set.kg === s.bestKg && set.reps === s.bestReps
+                      const isBest = puntaje(kind, set) === puntaje(kind, s.best)
                       return (
                         <span key={idx} className="num" style={{
                           fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 7,
@@ -167,7 +203,7 @@ export function ExerciseHistorySheet({ exerciseId, onClose }: { exerciseId: stri
                           border: `1px solid ${isBest ? 'rgba(232,99,74,0.35)' : S.line2}`,
                           color: isBest ? S.acc : S.dim,
                         }}>
-                          {formatKg(set.kg)}×{set.reps}
+                          {textoSerie(kind, set)}
                         </span>
                       )
                     })}

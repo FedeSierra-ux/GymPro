@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { createSafeStorage, huboFalloDeEscritura } from '../utils/safeStorage'
 import type { ActiveWorkoutExercise, AppToast, Workout } from '../types'
 import { useStore } from '../store/useStore'
 import { isDurationExercise, durationUnit, toSeconds, fromSeconds } from '../utils/duration'
@@ -72,10 +73,8 @@ interface WorkoutState {
   dismissSummary: (destino?: import('../types').NavTab) => void
 }
 
-// A real workout rarely exceeds ~2h; if more than 3h elapse before the user
-// hits "finish" (app left open/backgrounded), treat the session as if it had
-// been closed at the 2h mark instead of recording the raw elapsed time.
-const AUTO_CLOSE_THRESHOLD_MIN = 180
+// Duración con la que se guarda un entreno que se cerró solo: no se sabe
+// cuándo terminó de verdad, y 2 h es una sesión larga pero realista.
 const MAX_WORKOUT_DURATION_MIN = 120
 
 /**
@@ -192,6 +191,8 @@ export const useWorkoutStore = create<WorkoutState>()(
       summaryPrCount: 0,
 
       startWorkout: (routineId, dateOverride) => {
+        // Que las series sean las de la semana del plan en curso (4-6 o 1-3).
+        useStore.getState().sincronizarPrograma()
         const { routines } = useStore.getState()
         const routine = routines.find((r) => r.id === routineId)
         if (!routine) return
@@ -291,7 +292,9 @@ export const useWorkoutStore = create<WorkoutState>()(
             if (ei !== exerciseIdx) return ex
             return {
               ...ex,
-              sets: ex.sets.map((st, si) => (si === setIdx ? { ...st, completed: !st.completed } : st)),
+              sets: ex.sets.map((st, si) => (si === setIdx
+                ? { ...st, completed: !st.completed, completedAt: st.completed ? undefined : Date.now() }
+                : st)),
             }
           })
           const completedSet = exercises[exerciseIdx].sets[setIdx]
@@ -329,10 +332,12 @@ export const useWorkoutStore = create<WorkoutState>()(
               exercises,
               lastCompletedSet,
               livePr,
-              // El descanso arranca sólo si se confirmó con el ✓⏱.
-              restTimerVisible: startRest,
+              // El descanso arranca sólo si se confirmó con el ✓⏱. Confirmar con
+              // un toque no corta el que ya estaba corriendo (en una superserie,
+              // tildar B mataba el descanso de A).
+              restTimerVisible: startRest || s.activeWorkout.restTimerVisible,
               restSecondsLeft: startRest ? descanso : s.activeWorkout.restSecondsLeft,
-              restTotalSeconds: descanso,
+              restTotalSeconds: startRest ? descanso : s.activeWorkout.restTotalSeconds,
               restEndsAt: startRest
                 ? Date.now() + descanso * 1000
                 : s.activeWorkout.restEndsAt,
@@ -345,11 +350,17 @@ export const useWorkoutStore = create<WorkoutState>()(
           if (!s.activeWorkout) return {}
           const exercises = s.activeWorkout.exercises.map((ex, ei) => {
             if (ei !== exerciseIdx) return ex
-            const lastWithValues = [...ex.sets].reverse().find((st) => st.kg !== '' || st.reps !== '')
+            const lastWithValues = [...ex.sets].reverse().find((st) => st.kg !== '' || st.reps !== '' || !!st.duration)
             const template = lastWithValues ?? ex.sets[ex.sets.length - 1]
             return {
               ...ex,
-              sets: [...ex.sets, { kg: template?.kg ?? '', reps: template?.reps ?? '', completed: false }],
+              sets: [...ex.sets, {
+                kg: template?.kg ?? '',
+                reps: template?.reps ?? '',
+                // Los ejercicios por tiempo (plancha, cinta) también copian la duración.
+                ...(template?.duration !== undefined ? { duration: template.duration } : {}),
+                completed: false,
+              }],
             }
           })
           return { activeWorkout: { ...s.activeWorkout, exercises } }
@@ -382,9 +393,14 @@ export const useWorkoutStore = create<WorkoutState>()(
             useStore.getState().addToast('Ese ejercicio ya está en el entreno', 'info')
             return {}
           }
-          // Se conserva la cantidad de series que ya tenía planificadas.
-          const nuevo = buildActiveExercise(exerciseId, s.activeWorkout.routineId, actual.sets.length)
-          const exercises = s.activeWorkout.exercises.map((e, i) => (i === exerciseIdx ? nuevo : e))
+          const hechas = actual.sets.filter((st) => st.completed)
+          // Las series que faltaban pasan al nuevo; las que ya se hicieron se
+          // quedan con el ejercicio original, que sigue en el entreno.
+          const faltantes = actual.sets.length - hechas.length
+          const nuevo = buildActiveExercise(exerciseId, s.activeWorkout.routineId, Math.max(1, faltantes))
+          const exercises = hechas.length > 0
+            ? s.activeWorkout.exercises.flatMap((e, i) => (i === exerciseIdx ? [{ ...e, sets: hechas }, nuevo] : [e]))
+            : s.activeWorkout.exercises.map((e, i) => (i === exerciseIdx ? nuevo : e))
           return { activeWorkout: { ...s.activeWorkout, exercises } }
         }),
 
@@ -445,10 +461,12 @@ export const useWorkoutStore = create<WorkoutState>()(
 
         const realFinishedAt = Date.now()
         const rawDurationMin = Math.round((realFinishedAt - activeWorkout.realStartedAt) / 60000)
-        // If the app was left open/backgrounded for a long time (e.g. the user
-        // forgot to close it), don't record the raw elapsed time as the workout
-        // duration — cap it at a realistic session length instead.
-        const durationMin = rawDurationMin > AUTO_CLOSE_THRESHOLD_MIN ? MAX_WORKOUT_DURATION_MIN : rawDurationMin
+        // El cierre automático (la app quedó abierta en el bolso) guarda una
+        // duración realista. Terminado a mano se respeta lo que duró: un
+        // entreno de 3 h 10 con una amiga se guardaba como 2 h.
+        const durationMin = options?.auto
+          ? MAX_WORKOUT_DURATION_MIN
+          : Math.min(rawDurationMin, AUTO_CLOSE_AFTER_MIN)
         // Use startedAt (which respects dateOverride) plus the (possibly capped)
         // duration so that backdated workouts land on the correct date instead of today.
         const finishedAt = activeWorkout.startedAt + durationMin * 60000
@@ -463,7 +481,11 @@ export const useWorkoutStore = create<WorkoutState>()(
               .map((s) => ({
                 kg: parseDecimal(s.kg) || 0,
                 reps: parseInt(s.reps) || 0,
-                completedAt: finishedAt,
+                // La hora real de la serie, corrida al día al que se imputa el
+                // entreno (puede ser el de ayer). Las viejas no la tenían.
+                completedAt: s.completedAt
+                  ? Math.min(finishedAt, activeWorkout.startedAt + Math.max(0, s.completedAt - activeWorkout.realStartedAt))
+                  : finishedAt,
                 isWarmup: s.isWarmup || undefined,
                 durationSec: isDurationExercise(exercise)
                   ? toSeconds(s.duration ?? '', unit)
@@ -473,7 +495,7 @@ export const useWorkoutStore = create<WorkoutState>()(
         })
 
         const newWorkout: Workout = {
-          id: `workout-${Date.now()}`,
+          id: typeof crypto !== 'undefined' && 'randomUUID' in crypto ? `workout-${crypto.randomUUID()}` : `workout-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
           routineId: activeWorkout.routineId,
           startedAt: activeWorkout.startedAt,
           finishedAt,
@@ -504,19 +526,23 @@ export const useWorkoutStore = create<WorkoutState>()(
         useStore.setState((s) => ({
           workouts: [...s.workouts, newWorkout],
           prs: newPrs,
-          toasts: [...s.toasts, ...avisos],
+          toasts: [...s.toasts, ...avisos].slice(-3),
         }))
 
-        set((s) => ({
+        // Se cierra en el mismo paso que se abre el resumen. Si el teléfono se
+        // quedó sin espacio el entreno igual queda en memoria (y el aviso pide
+        // exportar un backup): dejarlo abierto hacía que cada "Terminar" lo
+        // volviera a agregar.
+        set({
           // En el cierre automático no abrimos el resumen: el usuario no está
           // mirando y se lo encontraría de golpe al día siguiente.
           summaryWorkout: options?.auto ? null : newWorkout,
           summaryPrCount: options?.auto ? 0 : newPrCount,
-          activeWorkout: s.activeWorkout,
-        }))
-
-        // Clear active workout
-        set({ activeWorkout: null })
+          activeWorkout: null,
+        })
+        if (huboFalloDeEscritura()) {
+          useStore.getState().addToast('El entreno no se pudo guardar en el teléfono (sin espacio): exportá un backup ahora', 'info')
+        }
       },
 
       cancelWorkout: () => set({ activeWorkout: null }),
@@ -531,6 +557,11 @@ export const useWorkoutStore = create<WorkoutState>()(
         set((s) => {
           if (!s.activeWorkout) return {}
           const newSeconds = Math.max(0, s.activeWorkout.restSecondsLeft + delta)
+          // Bajarlo a cero es terminar el descanso: si no, quedaba clavado en
+          // 0:00 sin sonar, porque el tick sólo avisa al cruzar el cero.
+          if (newSeconds <= 0) {
+            return { activeWorkout: { ...s.activeWorkout, restTimerVisible: false, restSecondsLeft: 0, restEndsAt: undefined } }
+          }
           return {
             activeWorkout: {
               ...s.activeWorkout,
@@ -570,6 +601,20 @@ export const useWorkoutStore = create<WorkoutState>()(
         set({ summaryWorkout: null, summaryPrCount: 0 })
       },
     }),
-    { name: 'gympro-active-workout', partialize: (s) => ({ activeWorkout: s.activeWorkout }) }
+    {
+      name: 'gympro-active-workout',
+      storage: createSafeStorage<{ activeWorkout: ActiveWorkout | null }>(),
+      // El segundero del descanso no se guarda: sale de restEndsAt. Guardarlo
+      // era escribir el entreno entero en el teléfono una vez por segundo.
+      partialize: (s) => ({
+        activeWorkout: s.activeWorkout ? { ...s.activeWorkout, restSecondsLeft: 0 } : null,
+      }),
+      merge: (persisted, current) => {
+        const aw = (persisted as { activeWorkout?: ActiveWorkout | null } | undefined)?.activeWorkout ?? null
+        if (!aw) return { ...current, activeWorkout: null }
+        const left = aw.restEndsAt ? Math.max(0, Math.ceil((aw.restEndsAt - Date.now()) / 1000)) : aw.restTotalSeconds
+        return { ...current, activeWorkout: { ...aw, restSecondsLeft: left } }
+      },
+    }
   )
 )

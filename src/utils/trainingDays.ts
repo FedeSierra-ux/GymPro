@@ -1,4 +1,4 @@
-import type { Workout } from '../types'
+import type { Routine, Workout } from '../types'
 
 /** Clave YYYY-MM-DD en hora local (no UTC: si no, los entrenos de la noche caen al día siguiente). */
 export function dayKey(ts: number): string {
@@ -50,11 +50,31 @@ export const ROUTINE_COLORS = [
   '#F472B6', // rosa
 ]
 
-/** Color estable para una rutina, por su posición en la lista. */
-export function routineColor(routineId: string, routineIds: string[]): string {
-  const idx = routineIds.indexOf(routineId)
+/**
+ * Color de una rutina: el que quedó guardado al crearla. Antes salía de la
+ * posición en la lista, y borrar una rutina le cambiaba el color a las de
+ * después, también en todo el calendario histórico.
+ */
+export function routineColor(routineId: string, routines: Array<Pick<Routine, 'id' | 'color'>>): string {
+  const idx = routines.findIndex((r) => r.id === routineId)
   if (idx < 0) return '#6B7280' // rutina borrada: gris
-  return ROUTINE_COLORS[idx % ROUTINE_COLORS.length]
+  return ROUTINE_COLORS[(routines[idx].color ?? idx) % ROUTINE_COLORS.length]
+}
+
+/**
+ * Les fija color a las rutinas que no lo tienen: el primero de la paleta que
+ * no esté usado (o el que les tocaba por posición, si se migran en orden).
+ */
+export function conColores<R extends Pick<Routine, 'color'>>(routines: R[]): R[] {
+  if (routines.every((r) => r.color !== undefined)) return routines
+  const usados = new Set(routines.map((r) => r.color).filter((c): c is number => c !== undefined))
+  return routines.map((r, i) => {
+    if (r.color !== undefined) return r
+    let color = ROUTINE_COLORS.findIndex((_, c) => !usados.has(c))
+    if (color < 0) color = i % ROUTINE_COLORS.length
+    usados.add(color)
+    return { ...r, color }
+  })
 }
 
 export interface MonthStats {

@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { Dialog } from '../components/Dialog'
 import { useStore, useAllExercises } from '../store/useStore'
 import { useWorkoutStore } from '../stores/workoutStore'
 import { muscleGroupConfig } from '../data/muscleGroups'
@@ -11,6 +12,7 @@ import { ejercicioEnUso, rutinaEnUso, tieneVariante, VARIANTE_LABEL } from '../u
 import { posicionEnSuperserie, separarDelSiguiente, unirConSiguiente } from '../utils/superset'
 import { S } from '../theme'
 import { RoutineBadge } from '../components/RoutineIcon'
+import { DraftNumberInput } from '../components/DraftNumberInput'
 
 function BackIcon() {
   return (
@@ -374,71 +376,53 @@ export function RoutineDetailScreen() {
                     </span>
                     {editMode && byTime ? (
                       <div className="flex items-center gap-1.5">
-                        <input
-                          type="number"
-                          inputMode="numeric"
+                        <DraftNumberInput
                           value={uso.sets}
                           min={1}
                           max={20}
-                          aria-label="Series"
-                          onChange={e => {
-                            const v = Math.max(1, Math.min(20, parseInt(e.target.value) || 1))
-                            updateSerie(re, { sets: v })
-                          }}
+                          ariaLabel="Series"
+                          onCommit={(v) => updateSerie(re, { sets: v })}
                           className="w-9 text-center text-xs font-semibold rounded-lg py-1 border focus:outline-none focus:border-primary text-white bg-surface border-border"
                         />
                         <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.3)' }}>×</span>
-                        <input
-                          type="number"
-                          inputMode="decimal"
-                          value={fromSeconds(uso.targetSeconds ?? 0, unit)}
+                        <DraftNumberInput
+                          value={Number(fromSeconds(uso.targetSeconds ?? 0, unit) || 0)}
                           min={0}
-                          aria-label={unit === 'min' ? 'Minutos' : 'Segundos'}
-                          onChange={e => {
-                            updateSerie(re, { targetSeconds: toSeconds(e.target.value, unit) })
-                          }}
+                          max={unit === 'min' ? 300 : 3600}
+                          decimal={unit === 'min'}
+                          ariaLabel={unit === 'min' ? 'Minutos' : 'Segundos'}
+                          onCommit={(v) => updateSerie(re, { targetSeconds: toSeconds(v, unit) })}
                           className="w-12 text-center text-xs font-semibold rounded-lg py-1 border focus:outline-none focus:border-primary text-white bg-surface border-border"
                         />
                         <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.3)' }}>{unit}</span>
                       </div>
                     ) : editMode ? (
                       <div className="flex items-center gap-1.5">
-                        <input
-                          type="number"
-                          inputMode="numeric"
+                        <DraftNumberInput
                           value={uso.sets}
                           min={1}
                           max={20}
-                          onChange={e => {
-                            const v = Math.max(1, Math.min(20, parseInt(e.target.value) || 1))
-                            updateSerie(re, { sets: v })
-                          }}
+                          ariaLabel="Series"
+                          onCommit={(v) => updateSerie(re, { sets: v })}
                           className="w-9 text-center text-xs font-semibold rounded-lg py-1 border focus:outline-none focus:border-primary text-white bg-surface border-border"
                         />
                         <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.3)' }}>s ·</span>
-                        <input
-                          type="number"
-                          inputMode="numeric"
+                        <DraftNumberInput
                           value={uso.repsMin}
                           min={1}
-                          max={uso.repsMax}
-                          onChange={e => {
-                            const v = Math.max(1, Math.min(uso.repsMax, parseInt(e.target.value) || 1))
-                            updateSerie(re, { repsMin: v })
-                          }}
+                          max={100}
+                          ariaLabel="Reps mínimas"
+                          // Si el piso pasa al techo, el techo sube con él (8-12 → 15-15).
+                          onCommit={(v) => updateSerie(re, { repsMin: v, ...(v > uso.repsMax ? { repsMax: v } : {}) })}
                           className="w-9 text-center text-xs font-semibold rounded-lg py-1 border focus:outline-none focus:border-primary text-white bg-surface border-border"
                         />
                         <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.3)' }}>–</span>
-                        <input
-                          type="number"
-                          inputMode="numeric"
+                        <DraftNumberInput
                           value={uso.repsMax}
-                          min={uso.repsMin}
+                          min={1}
                           max={100}
-                          onChange={e => {
-                            const v = Math.max(uso.repsMin, Math.min(100, parseInt(e.target.value) || uso.repsMin))
-                            updateSerie(re, { repsMax: v })
-                          }}
+                          ariaLabel="Reps máximas"
+                          onCommit={(v) => updateSerie(re, { repsMax: v, ...(v < uso.repsMin ? { repsMin: v } : {}) })}
                           className="w-9 text-center text-xs font-semibold rounded-lg py-1 border focus:outline-none focus:border-primary text-white bg-surface border-border"
                         />
                         <span className="text-[11px]" style={{ color: 'rgba(255,255,255,0.3)' }}>r</span>
@@ -551,7 +535,7 @@ export function RoutineDetailScreen() {
         const guardar = (exs: RoutineExercise[]) => updateRoutine({ ...routine, exercises: exs })
         return (
           <div className="fixed inset-0 z-50 flex items-end" style={{ background: 'rgba(0,0,0,0.8)' }} onClick={() => setOpcionesDe(null)}>
-            <div className="w-full rounded-t-3xl px-4 pt-4 sheet-enter" onClick={(e) => e.stopPropagation()}
+            <Dialog label="Opciones del ejercicio" onClose={() => setOpcionesDe(null)} className="w-full rounded-t-3xl px-4 pt-4 sheet-enter" onClick={(e) => e.stopPropagation()}
               style={{ background: S.surf, borderTop: `1px solid ${S.line2}`, paddingBottom: 'max(24px, env(safe-area-inset-bottom, 0px))' }}>
               <div style={{ width: 40, height: 4, background: S.surf2, borderRadius: 2, margin: '0 auto 14px' }} />
               <p style={{ fontSize: 15, fontWeight: 700, color: S.ink, marginBottom: 14 }}>{ex?.nameEs}</p>
@@ -588,7 +572,7 @@ export function RoutineDetailScreen() {
                 style={{ width: '100%', marginTop: 10, padding: '14px 16px', borderRadius: 14, background: 'none', border: `1px solid ${S.line2}`, color: S.dim, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 Listo
               </button>
-            </div>
+            </Dialog>
           </div>
         )
       })()}

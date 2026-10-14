@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useHoy } from '../utils/useHoy'
 import { useStore } from '../store/useStore'
 import { muscleGroupConfig } from '../data/muscleGroups'
 import { CustomExercisesScreen } from './CustomExercisesScreen'
@@ -67,11 +68,10 @@ export function RutinasScreen() {
   const sortedWorkouts = [...workouts]
     .filter((w) => w.finishedAt)
     .sort((a, b) => (b.finishedAt ?? 0) - (a.finishedAt ?? 0))
-  const routineIds = routines.map((r) => r.id)
   // Cuándo se hizo cada rutina por última vez, para "hace 2 días".
   const ultimaVez = new Map<string, number>()
   for (const w of sortedWorkouts) if (!ultimaVez.has(w.routineId)) ultimaVez.set(w.routineId, w.startedAt)
-  const [nowTs] = useState(() => Date.now())
+  const nowTs = useHoy()
 
   const handleCreateRoutine = () => {
     const id = `routine-${Date.now()}`
@@ -107,7 +107,7 @@ export function RutinasScreen() {
           const ocultos = muscleGroups.length - CHIPS_VISIBLES
           const totalSets = rutinaEnUso(routine).exercises.map((e) => e.sets)
           const duration = getApproxDuration(totalSets)
-          const color = routineColor(routine.id, routineIds)
+          const color = routineColor(routine.id, routines)
 
           return (
             <RoutineCard
@@ -200,12 +200,12 @@ export function RutinasScreen() {
           }}
         >
           <span style={{ fontSize: 16, lineHeight: 1 }}>💪</span> Mis ejercicios
-          {customExercises.length > 0 && (
+          {customExercises.some(e => !e.archived) && (
             <span style={{
               fontSize: 11, padding: '2px 6px', borderRadius: 20, fontWeight: 700,
               background: 'rgba(236,238,244,0.08)', color: '#ECEEF4',
             }}>
-              {customExercises.length}
+              {customExercises.filter(e => !e.archived).length}
             </span>
           )}
         </button>

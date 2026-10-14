@@ -152,7 +152,7 @@ export function WorkoutSummaryModal({ workout, prCount, onDismiss }: Props) {
       const blob = await generarImagenEntreno({
         rutina: routine?.name ?? 'Entreno',
         fecha: workout.startedAt,
-        color: routineColor(workout.routineId, routines.map(r => r.id)),
+        color: routineColor(workout.routineId, routines),
         duracionMin: workout.durationMin ?? 0,
         series: totalSets,
         volumenKg: volumen,

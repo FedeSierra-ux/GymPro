@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useHoy } from '../utils/useHoy'
 import { useStore, useAllExercises } from '../store/useStore'
 import { muscleGroupConfig } from '../data/muscleGroups'
 import { ExerciseHistorySheet } from '../components/ExerciseHistorySheet'
@@ -31,7 +32,7 @@ export function HistorialBuscadorSheet({ onClose }: { onClose: () => void }) {
   const [busqueda, setBusqueda] = useState('')
   const [abierto, setAbierto] = useState<string | null>(null)
   // Una sola lectura del reloj por montaje: el render tiene que ser puro.
-  const [nowTs] = useState(() => Date.now())
+  const nowTs = useHoy()
 
   const resultados = useMemo<Resultado[]>(() => {
     const terminados = workouts.filter((w) => w.finishedAt)
@@ -83,7 +84,9 @@ export function HistorialBuscadorSheet({ onClose }: { onClose: () => void }) {
   }, [workouts, exercises, busqueda])
 
   const diasAtras = (ts: number) => {
-    const dias = Math.floor((nowTs - ts) / 86400000)
+    // Días de calendario, no tandas de 24 h: lo de anoche a las 23 es "ayer".
+    const medianoche = (t: number) => { const d = new Date(t); return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() }
+    const dias = Math.round((medianoche(nowTs) - medianoche(ts)) / 86400000)
     if (dias <= 0) return 'hoy'
     if (dias === 1) return 'ayer'
     if (dias < 30) return `hace ${dias} días`

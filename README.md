@@ -73,7 +73,10 @@ Es una sugerencia, no una imposición: aparece como un cartel arriba de cada
 ejercicio en el entreno, con un botón *"Usar X kg"* que la aplica a las series
 que faltan. Las series arrancan prellenadas con el **peso máximo de la última
 vez** (sin calentamiento), así subir o no lo decide el usuario. Si pasaron más
-de tres semanas desde la última vez, propone arrancar un 10 % abajo.
+de tres semanas desde la última vez, propone arrancar un 10 % abajo (con pesos
+chicos, donde bajar un salto entero es demasiado, propone mantener con calma).
+Al subir suma exactamente un salto (3 kg → 5 kg, no 6), y si la última vez las
+reps quedaron muy lejos del piso del rango, propone bajar un salto.
 
 ## Cierre automático del entreno
 
@@ -83,11 +86,32 @@ series completadas se guarda con la duración capeada en 2 h, y si no tiene
 ninguna se descarta. Así la sesión del día no se arrastra al día siguiente ni
 queda viva para siempre porque el teléfono se guardó en el bolso.
 
-## Constancia (heatmap)
+Terminado a mano, el entreno guarda lo que duró de verdad. Cada serie guarda la
+hora en que se tildó (`completedAt`), así se pueden medir los descansos reales.
 
-En Progreso, arriba de todo, con dos zooms: **semanal** (últimas 12 semanas, día
-por día) y **mensual** (el último año). Cada celda es un día y la intensidad son
-las series efectivas; arranca mostrando lo más reciente.
+## Constancia
+
+La Agenda muestra el mes con cada día entrenado pintado del color de su rutina, y
+los días planificados con un aro. El color se guarda en la rutina al crearla
+(`Routine.color`): borrar una rutina no recolorea a las demás.
+
+## Datos guardados y backup
+
+Todo vive en `localStorage` (`gympro-storage-v2`), con versión (`STORAGE_VERSION`)
+y migraciones en `migrarEstado` (`src/store/useStore.ts`). El almacenamiento
+(`src/utils/safeStorage.ts`) no reescribe lo que no cambió y, si el teléfono se
+queda sin espacio, avisa en vez de cortar lo que se estaba haciendo.
+
+- **Exportar** arma el archivo con lo que hay en memoria y **sin la API key** de
+  Anthropic, que se queda sólo en el teléfono.
+- **Importar** valida el archivo (forma mínima, entrenos y rutinas sanos, versión
+  conocida) y guarda una copia de los datos anteriores: en Ajustes aparece
+  *"Volver a los datos de antes del último import"*.
+- Si una pantalla revienta, en vez de quedar en blanco aparece una salida para
+  exportar los datos o volver a la copia anterior (`ErrorBoundary`).
+- Borrar un ejercicio propio lo **archiva**: deja de ofrecerse, pero el historial,
+  los récords y Progreso lo siguen mostrando. Tiene *Deshacer*, y crearlo de nuevo
+  con el mismo nombre lo recupera con su historial.
 
 ## Plan de Milena
 
@@ -111,8 +135,10 @@ ejercicio define su bloque y lo une en superserie con el siguiente, y con
 **Semana del plan.** Inicio pregunta una vez en qué semana estás; con eso
 muestra *Semana N de 6* y en la semana 4 pasa solo todas las rutinas a
 Semanas 4-6 (`src/utils/program.ts`). Pasada la 6, pregunta si arrancás de
-nuevo. Un cambio manual del selector no se pisa: sólo se aplica cuando el plan
-cambia de bloque.
+nuevo; *Terminar el plan* vuelve las rutinas a Semanas 1-3, y desde Ajustes se
+puede retomar. Un cambio manual del selector no se pisa: sólo se aplica cuando
+el plan cambia de bloque. El domingo la tarjeta ya muestra la semana que arranca
+al otro día, y la semana que se elige ese día es la que viene.
 
 **Plan en orden.** La semana tipo dice qué días se entrena y en qué orden van
 las rutinas, pero no ata una rutina a un día: toca la siguiente a la última que

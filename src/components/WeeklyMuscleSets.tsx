@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useHoy } from '../utils/useHoy'
 import { useStore, useAllExercises } from '../store/useStore'
 import { muscleGroupConfig } from '../data/muscleGroups'
 import { MuscleIcon } from './MuscleIcon'
@@ -15,7 +15,7 @@ import type { MuscleGroup } from '../types'
 export function WeeklyMuscleSets() {
   const { workouts, routines, weekPlan: planBase, weekOverrides } = useStore()
   const allExercises = useAllExercises()
-  const [nowTs] = useState(() => Date.now())
+  const nowTs = useHoy()
   const desde = lunesDe(nowTs)
   const weekPlan = planDeSemana(planBase, weekOverrides, nowTs)
   const porGrupo = seriesPorGrupo(workouts, allExercises, desde, nowTs + 1)

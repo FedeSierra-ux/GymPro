@@ -28,6 +28,8 @@ export interface Exercise {
   frameSlug?: string
   /** true para los ejercicios que creó el usuario a mano. */
   isCustom?: boolean
+  /** Ejercicio propio borrado: no se ofrece para elegir, pero el historial lo sigue nombrando. */
+  archived?: boolean
   /** Por defecto 'weight_reps'. */
   trackingType?: TrackingType
   /** Unidad que se muestra en los ejercicios por tiempo. Cardio en minutos, isométricos en segundos. */
@@ -68,6 +70,8 @@ export interface Routine {
   createdAt: number
   /** Qué series y reps se usan: las de base (semanas 1-3) o las de `alt` (semanas 4-6). */
   variante?: 'base' | 'alt'
+  /** Posición en la paleta de colores. Se fija al crearla para que borrar otra no la recoloree. */
+  color?: number
 }
 
 export interface WorkoutSet {
@@ -148,6 +152,8 @@ export interface ActiveWorkoutSet {
   isWarmup?: boolean
   /** Lo que se escribe en el campo de tiempo, en la unidad del ejercicio. */
   duration?: string
+  /** Momento real (reloj de pared) en que se tildó la serie. */
+  completedAt?: number
 }
 
 export interface ActiveWorkoutExercise {

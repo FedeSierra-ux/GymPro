@@ -12,9 +12,14 @@ export function useWakeLock(active: boolean) {
 
     let sentinel: WakeLockSentinel | null = null
     let released = false
+    // El pedido inicial y el de visibilitychange podían estar en vuelo a la
+    // vez: se conseguían dos locks y el cleanup soltaba uno solo.
+    let pidiendo = false
 
     const request = async () => {
-      if (released || document.visibilityState !== 'visible') return
+      if (released || pidiendo || document.visibilityState !== 'visible') return
+      if (sentinel && !sentinel.released) return
+      pidiendo = true
       try {
         const acquired = await navigator.wakeLock.request('screen')
         // El pedido es asíncrono: si mientras tanto terminó el entreno (o se
@@ -28,6 +33,8 @@ export function useWakeLock(active: boolean) {
         sentinel = acquired
       } catch {
         // El navegador puede negarlo (batería baja, pestaña en segundo plano).
+      } finally {
+        pidiendo = false
       }
     }
 

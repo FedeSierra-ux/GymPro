@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useHoy } from '../utils/useHoy'
 import { useStore } from '../store/useStore'
 import { lunesDe } from '../utils/program'
 import { dayKey, plannedDowSet } from '../utils/trainingDays'
@@ -10,8 +10,8 @@ import { seriesEfectivas } from '../utils/volume'
  * el lunes siguiente. Si la semana pasada no hubo entrenos, no se muestra.
  */
 export function WeeklyReview() {
-  const { workouts, prs, weekPlan, weekOverrides, routines, repasoCerrado, cerrarRepaso } = useStore()
-  const [nowTs] = useState(() => Date.now())
+  const { workouts, prs, weekPlan, weekOverrides, routines, repasoCerrado, cerrarRepaso, weeklyGoal } = useStore()
+  const nowTs = useHoy()
   const lunes = lunesDe(nowTs)
   const clave = dayKey(lunes)
   if (repasoCerrado === clave) return null
@@ -21,7 +21,9 @@ export function WeeklyReview() {
   const semana = workouts.filter((w) => w.finishedAt && w.startedAt >= lunesPasado && w.startedAt < lunes)
   if (!semana.length) return null
 
-  const planificados = plannedDowSet(planDeSemana(weekPlan, weekOverrides, lunesPasado), routines.map((r) => r.id)).size
+  const planificados = weeklyGoal ?? plannedDowSet(planDeSemana(weekPlan, weekOverrides, lunesPasado), routines.map((r) => r.id)).size
+  // Días entrenados, no entrenos: dos sesiones el mismo día daban "4 de 3".
+  const diasEntrenados = new Set(semana.map((w) => dayKey(w.startedAt))).size
   const series = seriesEfectivas(semana)
   const fechas = new Set(semana.map((w) => w.startedAt))
   const records = prs.reduce((n, p) => n + [p, ...(p.history ?? [])].filter((h) => fechas.has(h.date)).length, 0)
@@ -44,8 +46,8 @@ export function WeeklyReview() {
         </div>
         <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 12, color: 'var(--dim)', paddingRight: 8 }}>
           <span>
-            <b className="num" style={{ color: 'var(--ink)', fontSize: 16 }}>{semana.length}</b>
-            {planificados > 0 ? <> de <span className="num">{planificados}</span> entrenos</> : semana.length === 1 ? ' entreno' : ' entrenos'}
+            <b className="num" style={{ color: 'var(--ink)', fontSize: 16 }}>{planificados > 0 ? diasEntrenados : semana.length}</b>
+            {planificados > 0 ? <> de <span className="num">{planificados}</span> días</> : semana.length === 1 ? ' entreno' : ' entrenos'}
           </span>
           <span><b className="num" style={{ color: 'var(--ink)', fontSize: 16 }}>{series}</b> series</span>
           <span>

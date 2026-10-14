@@ -8,9 +8,11 @@ import { muscleGroupConfig } from '../data/muscleGroups'
 import { seedRoutines, seedWorkouts } from '../data/seedData'
 import { buildMileRoutines, completarPlanMile, MILE_WEEK_PLAN } from '../data/mileRoutines'
 import { computeRecords } from '../utils/records'
+import { conColores } from '../utils/trainingDays'
 import { tieneVariante } from '../utils/routineVariant'
 import type { WeekOverrides } from '../utils/weekPlan'
 import { faseDeSemana, inicioParaSemana, semanaDelPrograma, SEMANAS_PROGRAMA, type ProgramaEstado } from '../utils/program'
+import { alFallarEscritura, createSafeStorage } from '../utils/safeStorage'
 
 interface AppState {
   // Navigation
@@ -51,8 +53,12 @@ interface AppState {
   fijarSemanaPrograma: (semana: number) => void
   /** Pasa las rutinas a Semanas 4-6 (o vuelve a 1-3) cuando el plan cambia de bloque. */
   sincronizarPrograma: () => void
-  /** Después de la semana 6: no volver a preguntar. */
+  /** Después de la semana 6: no volver a preguntar. Las rutinas vuelven a Semanas 1-3. */
   terminarPrograma: () => void
+  /** Vuelve a preguntar en qué semana del plan estás (después de haberlo terminado). */
+  retomarPrograma: () => void
+  /** Las rutinas de Mile ya se completaron con bloques y semanas 4-6: no se vuelve a hacer. */
+  planMileCompletado: boolean
   /** Lunes (dayKey) de la semana cuyo repaso ya se cerró en Inicio. */
   repasoCerrado: string | null
   cerrarRepaso: (lunesKey: string) => void
@@ -119,7 +125,13 @@ interface AppState {
   createCustomExercise: (name: string, opts?: { group?: MuscleGroup; equipment?: string }) => Exercise | null
   /** Edita un ejercicio propio ya creado (el historial no se toca: el id no cambia). */
   updateCustomExercise: (id: string, patch: { nameEs: string; group: MuscleGroup; equipment: string }) => void
+  /**
+   * Archiva un ejercicio propio: deja de aparecer para elegir, pero el
+   * historial, los récords y Progreso lo siguen mostrando.
+   */
   deleteCustomExercise: (id: string) => void
+  /** Deshace el borrado de un ejercicio propio (y lo vuelve a poner en las rutinas de donde salió). */
+  restoreCustomExercise: (exercise: Exercise, routines: Routine[]) => void
 
   // Archived routines (for history display after deletion)
   getArchivedRoutineName: (routineId: string) => { name: string; emoji: string } | null
@@ -129,6 +141,74 @@ interface AppState {
 
   // Seed
   seedData: () => void
+}
+
+export const STORAGE_KEY = 'gympro-storage-v2'
+/**
+ * Versión del formato guardado. Sube cuando cambia la forma de los datos, y
+ * `migrarEstado` lleva lo viejo a lo nuevo (también al importar un backup).
+ */
+export const STORAGE_VERSION = 1
+
+function partialize(state: AppState) {
+  return {
+    routines: state.routines,
+    workouts: state.workouts,
+    prs: state.prs,
+    exerciseTips: state.exerciseTips,
+    userName: state.userName,
+    seeded: state.seeded,
+    onboarded: state.onboarded,
+    anthropicApiKey: state.anthropicApiKey,
+    weekPlan: state.weekPlan,
+    weekOverrides: state.weekOverrides,
+    weeklyGoal: state.weeklyGoal,
+    measures: state.measures,
+    lastBackupAt: state.lastBackupAt,
+    customExercises: state.customExercises,
+    avatarPhoto: state.avatarPhoto,
+    archivedRoutineNames: state.archivedRoutineNames,
+    programa: state.programa,
+    repasoCerrado: state.repasoCerrado,
+    planMileCompletado: state.planMileCompletado,
+  }
+}
+
+export type PersistedState = ReturnType<typeof partialize>
+
+/** La semana tipo de Mile que se guardó entre fines de agosto y principios de octubre: martes, jueves y sábado. */
+const MILE_WEEK_PLAN_VIEJO: Record<string, string> = { 1: 'mile-piernas', 3: 'mile-brazos', 5: 'mile-fullbody' }
+
+/**
+ * Lleva un estado guardado por una versión anterior al formato actual.
+ * Exportada para probarla y para el import de backups.
+ */
+export function migrarEstado(persisted: unknown, version: number): Record<string, unknown> {
+  const state = { ...((persisted ?? {}) as Record<string, unknown>) }
+  if (version < 1) {
+    // El peso corporal de junio y julio de 2026 (bodyWeights) pasa a medidas.
+    const viejos = state.bodyWeights
+    if (Array.isArray(viejos) && viejos.length) {
+      const medidas = Array.isArray(state.measures) ? [...(state.measures as BodyMeasure[])] : []
+      const fechas = new Set(medidas.map((m) => m.date))
+      viejos.forEach((b: { date?: unknown; kg?: unknown }, i) => {
+        if (typeof b?.date !== 'number' || typeof b?.kg !== 'number' || fechas.has(b.date)) return
+        medidas.push({ id: `medida-migrada-${b.date}-${i}`, date: b.date, weightKg: b.kg })
+      })
+      state.measures = medidas.sort((a, b) => a.date - b.date)
+    }
+    delete state.bodyWeights
+    // Cada rutina se queda con el color que tenía (el de su posición).
+    if (Array.isArray(state.routines)) state.routines = conColores(state.routines as Routine[])
+    // La semana tipo de Mile con las claves corridas (martes, jueves, sábado).
+    const plan = state.weekPlan as Record<string, string | null> | undefined
+    if (plan) {
+      const conRutina = Object.entries(plan).filter(([, id]) => id)
+      const esElViejo = conRutina.length === 3 && conRutina.every(([dow, id]) => MILE_WEEK_PLAN_VIEJO[dow] === id)
+      if (esElViejo) state.weekPlan = { ...MILE_WEEK_PLAN }
+    }
+  }
+  return state
 }
 
 export const useStore = create<AppState>()(
@@ -159,6 +239,7 @@ export const useStore = create<AppState>()(
       archivedRoutineNames: {},
       programa: null,
       repasoCerrado: null,
+      planMileCompletado: false,
 
       setActiveTab: (tab) => set({ activeTab: tab }),
       setCalendarSubTab: (tab) => set({ calendarSubTab: tab }),
@@ -168,7 +249,7 @@ export const useStore = create<AppState>()(
       clearAgendaDay: () => set({ agendaDayTs: null }),
       setAvatarPhoto: (photo) => set({ avatarPhoto: photo }),
 
-      addRoutine: (routine) => set((s) => ({ routines: [...s.routines, routine] })),
+      addRoutine: (routine) => set((s) => ({ routines: conColores([...s.routines, routine]) })),
       updateRoutine: (routine) =>
         set((s) => ({ routines: s.routines.map((r) => (r.id === routine.id ? routine : r)) })),
       deleteRoutine: (id) => set((s) => {
@@ -252,6 +333,8 @@ export const useStore = create<AppState>()(
 
       updateWorkout: (workout) =>
         set((s) => {
+          // Una fecha inválida escondía el entreno de todas las vistas para siempre.
+          if (!Number.isFinite(workout.startedAt) || (workout.finishedAt !== undefined && !Number.isFinite(workout.finishedAt))) return {}
           const workouts = s.workouts.map((w) => (w.id === workout.id ? workout : w))
           return { workouts, prs: computeRecords(workouts, [...s.exercises, ...s.customExercises]) }
         }),
@@ -267,14 +350,16 @@ export const useStore = create<AppState>()(
       setAnthropicApiKey: (key) => set({ anthropicApiKey: key }),
       addToast: (message, type) =>
         set((s) => ({
-          toasts: [...s.toasts, { id: `toast-${Date.now()}-${Math.random().toString(36).slice(2)}`, message, type }],
+          // Se ven los últimos 3; los de más atrás no corrían su reloj y
+          // reaparecían minutos después (un "Deshacer" fuera de contexto).
+          toasts: [...s.toasts, { id: `toast-${Date.now()}-${Math.random().toString(36).slice(2)}`, message, type }].slice(-3),
         })),
       addUndoToast: (message, undo) =>
         set((s) => ({
           toasts: [
             ...s.toasts,
-            { id: `toast-${Date.now()}-${Math.random().toString(36).slice(2)}`, message, type: 'info', undo },
-          ],
+            { id: `toast-${Date.now()}-${Math.random().toString(36).slice(2)}`, message, type: 'info' as const, undo },
+          ].slice(-3),
         })),
 
       removeToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
@@ -326,7 +411,17 @@ export const useStore = create<AppState>()(
         )
       },
 
-      terminarPrograma: () => set((s) => (s.programa ? { programa: { ...s.programa, terminado: true } } : {})),
+      terminarPrograma: () =>
+        set((s) => (s.programa
+          ? {
+              programa: { ...s.programa, terminado: true, fase: 'base' },
+              // Sin plan en curso, las rutinas vuelven a las series de base:
+              // quedaban trabadas en Semanas 4-6.
+              routines: s.routines.map((r) => (tieneVariante(r) ? { ...r, variante: 'base' } : r)),
+            }
+          : {})),
+
+      retomarPrograma: () => set({ programa: null }),
 
       cerrarRepaso: (lunesKey) => set({ repasoCerrado: lunesKey }),
 
@@ -358,6 +453,13 @@ export const useStore = create<AppState>()(
         const existing = [...get().exercises, ...get().customExercises].find(
           (e) => e.nameEs.trim().toLowerCase() === trimmed.toLowerCase()
         )
+        if (existing?.archived) {
+          // Uno que se había borrado vuelve con su historial.
+          set((s) => ({
+            customExercises: s.customExercises.map((e) => (e.id === existing.id ? { ...e, archived: undefined } : e)),
+          }))
+          return { ...existing, archived: undefined }
+        }
         if (existing) return existing
         const ex = buildCustomExercise(trimmed, opts)
         set((s) => ({ customExercises: [...s.customExercises, ex] }))
@@ -386,12 +488,21 @@ export const useStore = create<AppState>()(
 
       deleteCustomExercise: (id) =>
         set((s) => ({
-          customExercises: s.customExercises.filter((e) => e.id !== id),
-          // Remove deleted exercise from all routines to avoid orphaned refs
+          // No se borra: se archiva. Los entrenos guardados lo siguen
+          // nombrando, y sin la definición desaparecía de todo el historial.
+          customExercises: s.customExercises.map((e) => (e.id === id ? { ...e, archived: true } : e)),
           routines: s.routines.map(r => ({
             ...r,
             exercises: r.exercises.filter(re => re.exerciseId !== id),
           })),
+        })),
+
+      restoreCustomExercise: (exercise, routines) =>
+        set((s) => ({
+          customExercises: s.customExercises.some((e) => e.id === exercise.id)
+            ? s.customExercises.map((e) => (e.id === exercise.id ? { ...exercise, archived: undefined } : e))
+            : [...s.customExercises, { ...exercise, archived: undefined }],
+          routines: s.routines.map((r) => routines.find((x) => x.id === r.id) ?? r),
         })),
 
       getArchivedRoutineName: (routineId) => {
@@ -404,7 +515,8 @@ export const useStore = create<AppState>()(
         const nuevas = buildMileRoutines().filter((r) => !existing.has(r.id))
         if (!nuevas.length) return 0
         set((s) => ({
-          routines: [...s.routines, ...nuevas],
+          planMileCompletado: true,
+          routines: conColores([...s.routines, ...nuevas]),
           // Si todavía no hay plan semanal armado, dejamos el sugerido.
           weekPlan: Object.values(s.weekPlan).some(Boolean) ? s.weekPlan : { ...s.weekPlan, ...MILE_WEEK_PLAN },
         }))
@@ -425,36 +537,21 @@ export const useStore = create<AppState>()(
 
         set({
           // Las rutinas de Mile vienen prearmadas desde el primer arranque.
-          routines: [...buildMileRoutines(), ...seedRoutines],
+          routines: conColores([...buildMileRoutines(), ...seedRoutines]),
           workouts: seedWorkouts,
           prs,
           weekPlan: { ...MILE_WEEK_PLAN },
           seeded: true,
+          planMileCompletado: true,
         })
       },
     }),
     {
-      name: 'gympro-storage-v2',
-      partialize: (state) => ({
-        routines: state.routines,
-        workouts: state.workouts,
-        prs: state.prs,
-        exerciseTips: state.exerciseTips,
-        userName: state.userName,
-        seeded: state.seeded,
-        onboarded: state.onboarded,
-        anthropicApiKey: state.anthropicApiKey,
-        weekPlan: state.weekPlan,
-        weekOverrides: state.weekOverrides,
-        weeklyGoal: state.weeklyGoal,
-        measures: state.measures,
-        lastBackupAt: state.lastBackupAt,
-        customExercises: state.customExercises,
-        avatarPhoto: state.avatarPhoto,
-        archivedRoutineNames: state.archivedRoutineNames,
-        programa: state.programa,
-        repasoCerrado: state.repasoCerrado,
-      }),
+      name: STORAGE_KEY,
+      version: STORAGE_VERSION,
+      storage: createSafeStorage<PersistedState>(),
+      partialize,
+      migrate: (persisted, version) => migrarEstado(persisted, version) as unknown as AppState,
       // Los récords guardados por versiones anteriores pueden haber quedado
       // huérfanos (entrenos borrados, pesos corregidos, marcas de ejercicios que
       // ya no existen). Se recalculan una sola vez al abrir la app para que
@@ -466,13 +563,45 @@ export const useStore = create<AppState>()(
         queueMicrotask(() => {
           useStore.setState((s) => ({
             prs: computeRecords(s.workouts, [...s.exercises, ...s.customExercises]),
-            routines: s.routines.map(completarPlanMile),
+            // Una sola vez: si no, los bloques que el usuario sacó a mano volvían
+            // en cada arranque.
+            ...(s.planMileCompletado ? {} : { routines: s.routines.map(completarPlanMile), planMileCompletado: true }),
           }))
         })
       },
     }
   )
 )
+
+/**
+ * El estado tal como se guarda en el teléfono, listo para el backup. La API
+ * key no viaja: el archivo se manda por WhatsApp o se sube a Drive, y con la
+ * key cualquiera podía usar la cuenta de Anthropic del usuario.
+ */
+export function serializarParaBackup(): string {
+  const { anthropicApiKey: _key, ...state } = partialize(useStore.getState())
+  void _key
+  return JSON.stringify({ state, version: STORAGE_VERSION })
+}
+
+// Si el almacenamiento se llena, el entreno queda en memoria: hay que avisar
+// para que se exporte un backup antes de cerrar la app.
+let ultimoAvisoDeEspacio = 0
+alFallarEscritura(() => {
+  if (Date.now() - ultimoAvisoDeEspacio < 60_000) return
+  ultimoAvisoDeEspacio = Date.now()
+  queueMicrotask(() =>
+    useStore.getState().addToast('No hay más espacio en el teléfono: exportá un backup desde Ajustes antes de cerrar la app', 'info')
+  )
+})
+
+// La app abierta en dos lugares (la PWA instalada y una pestaña) se pisaba los
+// datos: cada una escribía su estado viejo. Cuando la otra guarda, esta relee.
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === STORAGE_KEY) void useStore.persist.rehydrate()
+  })
+}
 
 /** Returns the merged list of built-in + custom exercises. Use this everywhere a user-created exercise might appear. */
 export function useAllExercises(): Exercise[] {

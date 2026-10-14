@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useHoy } from '../utils/useHoy'
 import type { Routine, Workout } from '../types'
 import { dayKey, setsByDay, routineByDay, routineColor } from '../utils/trainingDays'
 import { planDeSemana, type WeekOverrides } from '../utils/weekPlan'
@@ -45,7 +45,7 @@ export function MonthCalendar({
   planPorDia?: Map<string, string>
 }) {
   // Una sola lectura del reloj por montaje: el render tiene que ser puro.
-  const [nowTs] = useState(() => Date.now())
+  const nowTs = useHoy()
   const byDay = setsByDay(workouts)
   const rutinaDelDia = routineByDay(workouts)
   const routineIds = routines.map((r) => r.id)
@@ -95,7 +95,7 @@ export function MonthCalendar({
             {week.map((cell, ci) => {
               if (!cell) return <div key={`e-${ci}`} style={{ aspectRatio: '1' }} />
               const entrenado = !cell.isFuture && cell.sets > 0
-              const color = entrenado && cell.routineId ? routineColor(cell.routineId, routineIds) : null
+              const color = entrenado && cell.routineId ? routineColor(cell.routineId, routines) : null
               const date = new Date(cell.ts)
               const dow = (date.getDay() + 6) % 7
               // Entrenado: relleno. Planificado: aro con el color de la rutina
@@ -107,7 +107,7 @@ export function MonthCalendar({
                 : rutinaSemana
               const planned = !entrenado && rutinaPlan != null
               const pasado = !cell.isFuture && !cell.isToday
-              const aro = planned ? routineColor(rutinaPlan, routineIds) : null
+              const aro = planned ? routineColor(rutinaPlan, routines) : null
               const nombreRutina = cell.routineId
                 ? routines.find((r) => r.id === cell.routineId)?.name ?? 'rutina eliminada'
                 : null
@@ -156,7 +156,7 @@ export function MonthCalendar({
         <div className="flex items-center flex-wrap gap-x-3 gap-y-1.5" style={{ marginTop: 12 }}>
           {rutinasDelMes.map((r) => (
             <span key={r.id} className="flex items-center gap-1.5" style={{ fontSize: 11, color: S.dim }}>
-              <span style={{ width: 9, height: 9, borderRadius: 3, background: routineColor(r.id, routineIds), flexShrink: 0 }} />
+              <span style={{ width: 9, height: 9, borderRadius: 3, background: routineColor(r.id, routines), flexShrink: 0 }} />
               {r.name}
             </span>
           ))}

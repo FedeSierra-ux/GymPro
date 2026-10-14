@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
+import { Dialog } from '../components/Dialog'
 import { useStore, useAllExercises } from '../store/useStore'
 import { useWorkoutStore } from '../stores/workoutStore'
 import { muscleGroupConfig } from '../data/muscleGroups'
@@ -16,7 +17,6 @@ import { useLongPress } from '../utils/useLongPress'
 import { ExercisePickerSheet } from '../components/ExercisePickerSheet'
 import type { Exercise, ActiveWorkoutSet, PR, WorkoutSet } from '../types'
 import { S } from '../theme'
-import { estimate1RM } from '../utils/oneRM'
 import { formatKg } from '../utils/format'
 import { rutinaEnUso } from '../utils/routineVariant'
 import { RoutineBadge } from '../components/RoutineIcon'
@@ -267,7 +267,6 @@ function SetRow({
   const calentamiento = !!set.isWarmup
   const kg = parseDecimal(set.kg) || 0
   const reps = parseInt(set.reps) || 0
-  const orm = completada && !calentamiento && kg > 0 && reps > 1 ? estimate1RM(kg, reps) : null
   const seg = byTime ? toSeconds(set.duration ?? '', unit) : 0
   const sePuede = completada || (byTime ? seg > 0 : reps > 0)
   const mejoro = completada && !calentamiento && !!prev && superaAnterior(prev, kg, reps, seg, byTime)
@@ -411,19 +410,14 @@ function SetRow({
         </div>
       )}
 
-      {/* Pista de discos y 1RM, debajo de la fila */}
+      {/* Pista de discos, debajo de la fila */}
       {(verDiscos && isBarbellLike && kg >= BAR_KG) && (
         <div style={{ padding: '4px 14px 6px', fontSize: 11, color: S.dim }}>🏋️ {getPlates(kg)}</div>
-      )}
-      {orm !== null && (
-        <div style={{ padding: '0 14px 6px' }}>
-          <span style={{ fontSize: 11, fontWeight: 500, color: 'rgba(52,211,153,0.55)' }}>~1RM: {formatKg(orm)} kg</span>
-        </div>
       )}
 
       {acciones && (
         <div className="fixed inset-0 z-[58] flex items-end" style={{ background: 'rgba(0,0,0,0.7)' }} onClick={() => setAcciones(false)}>
-          <div
+          <Dialog label="Opciones de la serie" onClose={() => setAcciones(false)}
             className="w-full rounded-t-3xl px-4 pt-4 sheet-enter"
             style={{ background: S.surf, borderTop: `1px solid ${S.line2}`, paddingBottom: 'max(24px, env(safe-area-inset-bottom, 0px))' }}
             onClick={(e) => e.stopPropagation()}
@@ -452,7 +446,7 @@ function SetRow({
                 Cancelar
               </button>
             </div>
-          </div>
+          </Dialog>
         </div>
       )}
     </div>
@@ -476,7 +470,9 @@ export function ActiveWorkoutScreen() {
   const [menuEjercicio, setMenuEjercicio] = useState<number | null>(null)
   const [pickerPara, setPickerPara] = useState<{ modo: 'cambiar' | 'agregar'; exIdx: number } | null>(null)
   // El último ejercicio en el que se confirmó una serie: ahí sigue la próxima.
-  const [ultimoEj, setUltimoEj] = useState<number | null>(null)
+  // Se guarda el id y no la posición: agregar o sacar un ejercicio antes
+  // corría el resaltado a otro.
+  const [ultimoEjId, setUltimoEjId] = useState<string | null>(null)
   // Ejercicios terminados que el usuario volvió a abrir (los demás van colapsados).
   const [abiertos, setAbiertos] = useState<Set<string>>(() => new Set())
   // El descanso minimizado: se guarda para qué descanso (su restEndsAt), así el
@@ -485,6 +481,22 @@ export function ActiveWorkoutScreen() {
 
   // El conteo del descanso corre acá, esté el panel abierto o minimizado.
   useRestTimerTick()
+
+  // El fin del descanso se avisaba sólo con sonido y vibración: el lector de
+  // pantalla también tiene que enterarse.
+  const [avisoDescanso, setAvisoDescanso] = useState('')
+  const restVisible = !!activeWorkout?.restTimerVisible
+  const restLeft = activeWorkout?.restSecondsLeft ?? 0
+  const estabaDescansando = useRef(false)
+  useEffect(() => {
+    if (estabaDescansando.current && !restVisible && restLeft === 0) {
+      setAvisoDescanso('Terminó el descanso')
+      const t = setTimeout(() => setAvisoDescanso(''), 4000)
+      estabaDescansando.current = restVisible
+      return () => clearTimeout(t)
+    }
+    estabaDescansando.current = restVisible
+  }, [restVisible, restLeft])
 
   // Pantalla encendida mientras el entreno está abierto.
   useWakeLock(!!activeWorkout)
@@ -506,12 +518,13 @@ export function ActiveWorkoutScreen() {
   const descansando = activeWorkout.restTimerVisible
   const panelDescanso = descansando && minimizadoPara !== activeWorkout.restEndsAt
   const pendiente = (i: number) => activeWorkout.exercises[i]?.sets.some((st) => !st.completed)
-  const ejActual = ultimoEj !== null && pendiente(ultimoEj)
+  const ultimoEj = ultimoEjId ? activeWorkout.exercises.findIndex((e) => e.exerciseId === ultimoEjId) : -1
+  const ejActual = ultimoEj >= 0 && pendiente(ultimoEj)
     ? ultimoEj
     : activeWorkout.exercises.findIndex((_, i) => pendiente(i))
   const proximaSerie = ejActual >= 0 ? activeWorkout.exercises[ejActual].sets.findIndex((st) => !st.completed) : -1
   const confirmarSerie = (e: number, st: number, o?: { startRest?: boolean }) => {
-    setUltimoEj(e)
+    setUltimoEjId(activeWorkout.exercises[e]?.exerciseId ?? null)
     completeSet(e, st, o)
   }
   // Última vez que se hizo cada ejercicio, en cualquier rutina.
@@ -792,7 +805,7 @@ export function ActiveWorkoutScreen() {
         const hechas = activeEx?.sets.filter((st) => st.completed).length ?? 0
         return (
           <div className="fixed inset-0 z-[55] flex items-end" style={{ background: 'rgba(0,0,0,0.7)' }} onClick={() => setMenuEjercicio(null)}>
-            <div
+            <Dialog label="Opciones del ejercicio" onClose={() => setMenuEjercicio(null)}
               className="w-full rounded-t-3xl px-4 pt-4 sheet-enter"
               style={{ background: S.surf, borderTop: `1px solid ${S.line2}`, paddingBottom: 'max(24px, env(safe-area-inset-bottom, 0px))' }}
               onClick={(e) => e.stopPropagation()}
@@ -831,7 +844,7 @@ export function ActiveWorkoutScreen() {
                   Cancelar
                 </button>
               </div>
-            </div>
+            </Dialog>
           </div>
         )
       })()}
@@ -853,17 +866,25 @@ export function ActiveWorkoutScreen() {
         />
       )}
 
+      <div aria-live="assertive" className="sr-only">{avisoDescanso}</div>
       {panelDescanso && <RestTimerOverlay onMinimize={() => setMinimizadoPara(activeWorkout.restEndsAt)} />}
 
       {/* Confirm modal */}
       {confirmAction && (
         <div className="absolute inset-0 flex items-center justify-center z-50 px-6" style={{ background: 'rgba(0,0,0,0.8)' }}>
-          <div style={{ background: S.surf, border: `1px solid ${S.line2}`, borderRadius: 20, padding: 24, width: '100%', maxWidth: 360 }}>
+          <Dialog label={confirmAction === 'finish' ? 'Terminar entreno' : 'Cancelar entreno'} onClose={() => setConfirmAction(null)} style={{ background: S.surf, border: `1px solid ${S.line2}`, borderRadius: 20, padding: 24, width: '100%', maxWidth: 360 }}>
             <h3 style={{ color: S.ink, fontWeight: 700, fontSize: 17, marginBottom: 8 }}>
               {confirmAction === 'finish' ? '¿Terminar entreno?' : '¿Cancelar entreno?'}
             </h3>
             {confirmAction === 'cancel' && (
               <p style={{ color: S.dim, fontSize: 13, marginBottom: 16 }}>Se perderá todo el progreso de esta sesión.</p>
+            )}
+            {confirmAction === 'finish' && totalSets - completedSets > 0 && (
+              <p style={{ color: S.dim, fontSize: 13, marginBottom: 16 }}>
+                {totalSets - completedSets === 1
+                  ? 'Queda 1 serie sin tildar: no se guarda. Si la hiciste, volvé y tildala.'
+                  : `Quedan ${totalSets - completedSets} series sin tildar: no se guardan. Si las hiciste, volvé y tildalas.`}
+              </p>
             )}
             <div className="flex gap-3" style={{ marginTop: 16 }}>
               <button onClick={() => setConfirmAction(null)}
@@ -880,7 +901,7 @@ export function ActiveWorkoutScreen() {
                 {confirmAction === 'finish' ? '✓ Terminar' : '✕ Cancelar'}
               </button>
             </div>
-          </div>
+          </Dialog>
         </div>
       )}
 

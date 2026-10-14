@@ -1,11 +1,12 @@
-import { useState } from 'react'
+import { useHoy } from '../utils/useHoy'
 import { useStore, useAllExercises } from '../store/useStore'
 import { useWorkoutStore } from '../stores/workoutStore'
 import { BackupReminder } from '../components/BackupReminder'
 import { getWorkoutStreak } from '../utils/streak'
 import { plannedDowSet, dayKey } from '../utils/trainingDays'
 import { planDeSemana } from '../utils/weekPlan'
-import { proximaDelPlan } from '../utils/planOrder'
+import { prediccionDelPlan } from '../utils/planOrder'
+import { haceCuanto } from '../utils/relativeDate'
 import { ProgramCard } from '../components/ProgramCard'
 import { WeeklyReview } from '../components/WeeklyReview'
 import { WeeklyMuscleSets } from '../components/WeeklyMuscleSets'
@@ -22,7 +23,7 @@ function formatDate() {
 }
 
 export function HomeScreen() {
-  const { userName, avatarPhoto, workouts, routines, prs, weekPlan: planBase, weekOverrides, setActiveTab, openAgendaDay, getArchivedRoutineName } = useStore()
+  const { userName, avatarPhoto, workouts, routines, prs, weekPlan: planBase, weekOverrides, weeklyGoal, setActiveTab, openAgendaDay, getArchivedRoutineName } = useStore()
   const allExercises = useAllExercises()
   const startWorkout = useWorkoutStore((s) => s.startWorkout)
 
@@ -34,7 +35,7 @@ export function HomeScreen() {
     ? (lastRoutineVigente ?? getArchivedRoutineName(lastWorkout.routineId))
     : null
 
-  const [nowTs] = useState(() => Date.now())
+  const nowTs = useHoy()
   // La semana en curso puede tener un plan propio distinto de la semana por defecto.
   const weekPlan = planDeSemana(planBase, weekOverrides, nowTs)
   // Racha por entrenos encadenados, no por días corridos: entrenar día por
@@ -59,14 +60,11 @@ export function HomeScreen() {
     }
   })
   const hechosSemana = semana.filter(d => d.hecho).length
-  const metaSemana = semana.filter(d => d.planificado).length
+  // La meta de Ajustes manda; sin meta, los días de la semana tipo.
+  const metaSemana = weeklyGoal ?? semana.filter(d => d.planificado).length
 
-  // Last session stats
-  const todayMidnight = new Date(); todayMidnight.setHours(0, 0, 0, 0)
-  const daysAgo = lastWorkout
-    ? Math.floor((todayMidnight.getTime() - new Date(lastWorkout.startedAt).setHours(0, 0, 0, 0)) / 86400000)
-    : null
-  const daysAgoStr = daysAgo === null ? '' : daysAgo === 0 ? 'hoy' : daysAgo === 1 ? 'ayer' : `hace ${daysAgo} días`
+  // Last session stats (con días de calendario: el cambio de horario no corre la cuenta)
+  const daysAgoStr = lastWorkout ? haceCuanto(lastWorkout.startedAt, nowTs) : ''
   const lastTotalSets = lastWorkout?.exercises.reduce((a, e) => a + e.sets.filter(s => !s.isWarmup).length, 0) ?? 0
   // Los récords quedan fechados con el inicio del entreno en que se hicieron.
   const lastRecords = lastWorkout
@@ -78,7 +76,9 @@ export function HomeScreen() {
   // última que hiciste. Si faltaste el miércoles, el viernes te espera brazos.
   const hoyDow = (new Date(nowTs).getDay() + 6) % 7  // 0 = lunes
   const routineIds = routines.map(r => r.id)
-  const delPlan = proximaDelPlan(weekPlan, routineIds, finishedWorkouts)
+  // La misma cuenta que la Agenda: en una semana con plan propio manda la
+  // rutina que se puso ese día, y si no, la siguiente en el orden.
+  const delPlan = prediccionDelPlan(planBase, routineIds, finishedWorkouts, nowTs, 14, weekOverrides).values().next().value ?? null
   const proximaPlan = delPlan ? routines.find(r => r.id === delPlan) : undefined
   const yaEntreneHoy = lastWorkout
     ? new Date(lastWorkout.startedAt).toDateString() === new Date(nowTs).toDateString()
@@ -91,12 +91,15 @@ export function HomeScreen() {
   for (const w of sortedWorkouts) {
     if (!lastPerformedAt.has(w.routineId)) lastPerformedAt.set(w.routineId, w.finishedAt ?? w.startedAt)
   }
-  const otherRoutines = routines.filter(r => r.id !== lastWorkout?.routineId)
-  const suggestionPool = otherRoutines.length > 0 ? otherRoutines : routines
+  // Una rutina sin ejercicios no se puede arrancar: el entreno quedaba sin
+  // forma de terminarse.
+  const conEjercicios = routines.filter(r => r.exercises.length > 0)
+  const otherRoutines = conEjercicios.filter(r => r.id !== lastWorkout?.routineId)
+  const suggestionPool = otherRoutines.length > 0 ? otherRoutines : conEjercicios
   const porRotacion = [...suggestionPool].sort(
     (a, b) => (lastPerformedAt.get(a.id) ?? 0) - (lastPerformedAt.get(b.id) ?? 0)
   )[0]
-  const suggestedRoutine = proximaPlan ?? porRotacion
+  const suggestedRoutine = (proximaPlan && proximaPlan.exercises.length > 0 ? proximaPlan : undefined) ?? porRotacion
   const esDelPlan = !!proximaPlan && hoySeEntrena && !yaEntreneHoy
   // Día de descanso según el plan: se dice, no se esconde.
   const esDescansoPlanificado = diasPlanificados > 0 && !hoySeEntrena && !yaEntreneHoy
@@ -182,12 +185,12 @@ export function HomeScreen() {
                 <span style={{ fontSize: 13 }}>▶</span> Iniciar entreno
               </button>
               {/* Cualquier otra rutina, sin pasar por la pestaña Rutinas */}
-              {routines.length > 1 && (
+              {conEjercicios.length > 1 && (
                 <div
                   className="flex gap-2"
                   style={{ padding: '10px 14px 12px', overflowX: 'auto', scrollbarWidth: 'none', borderTop: '1px solid var(--line)' }}
                 >
-                  {routines.filter(r => r.id !== suggestedRoutine.id).map(r => (
+                  {conEjercicios.filter(r => r.id !== suggestedRoutine.id).map(r => (
                     <button
                       key={r.id}
                       onClick={() => startWorkout(r.id)}
