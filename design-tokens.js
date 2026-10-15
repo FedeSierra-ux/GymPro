@@ -87,3 +87,24 @@ export const text = {
 
 /** Mínimo táctil recomendado por Apple; Material usa 48. */
 export const TAP_MIN = 44
+
+/**
+ * Cronómetro del tabata, a pantalla completa. Va en un solo lugar para que
+ * cambiar el color sea cambiar estos valores y nada más (hoy: coral suave).
+ * - bg / ink: fondo de la fase de trabajo y el texto encima.
+ * - ring / track: el arco del anillo y su riel; también las rondas hechas.
+ * - chip: la píldora "Trabajo". soft: los botones redondos y "Sigue:".
+ * - pause / pauseInk: el botón grande de pausa y su ícono.
+ * - rest: en el descanso (fondo oscuro de la app), el anillo y el número.
+ */
+export const tabata = {
+  bg: '#F29A87',
+  ink: '#0C0E14',
+  ring: '#0C0E14',
+  track: 'rgba(12,14,20,.14)',
+  chip: 'rgba(12,14,20,.12)',
+  pause: '#0C0E14',
+  pauseInk: '#F29A87',
+  soft: 'rgba(12,14,20,.10)',
+  rest: '#F29A87',
+}

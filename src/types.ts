@@ -178,6 +178,12 @@ export interface ActiveWorkoutSet {
 export interface ActiveWorkoutExercise {
   exerciseId: string
   sets: ActiveWorkoutSet[]
+  /**
+   * Si se cambió por otro en este entreno ("Cambiar por otro ejercicio"): el de
+   * la rutina al que reemplaza. Así hereda su bloque y su superserie y no parte
+   * un circuito al medio.
+   */
+  reemplazaA?: string
 }
 
 export type ExerciseTips = Record<string, string>

@@ -50,3 +50,15 @@ export declare const radius: {
   lg: number
   xl: number
 }
+
+export declare const tabata: {
+  bg: string
+  ink: string
+  ring: string
+  track: string
+  chip: string
+  pause: string
+  pauseInk: string
+  soft: string
+  rest: string
+}

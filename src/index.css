@@ -246,6 +246,31 @@ h1, h2, h3, h4, h5, h6, p { margin: 0; padding: 0; }
   to { opacity: 1; transform: none; }
 }
 
+/* Circuitos y superseries: en pantallas angostas (iPhone SE) la letra del
+   ejercicio va sobre la esquina de la miniatura, así el nombre tiene lugar. */
+@media (max-width: 359px) {
+  .grupo-ident { position: relative; }
+  .grupo-letra {
+    position: absolute; top: -6px; left: -6px; z-index: 1;
+    width: 22px !important; height: 22px !important; border-radius: 8px !important;
+    font-size: 11px !important;
+  }
+}
+
+/* Cronómetro del tabata en pantallas bajas (iPhone SE): todo más junto y sin
+   la leyenda del pitido, para que la pausa entre sin scrollear. */
+@media (max-height: 680px) {
+  .tabata-cuerpo { padding-top: max(20px, env(safe-area-inset-top, 0px)) !important; padding-bottom: max(16px, env(safe-area-inset-bottom, 0px)) !important; }
+  .tabata-anillo { width: min(272px, 100%, 27vh) !important; margin-top: 12px !important; }
+  .tabata-mini { width: 52px !important; height: 52px !important; }
+  .tabata-numero { font-size: min(96px, 9.4vh) !important; }
+  .tabata-pausa { width: 68px !important; height: 68px !important; }
+  .tabata-actual { margin-top: 12px !important; }
+  .tabata-sigue { margin-top: 10px !important; }
+  .tabata-controles { padding-top: 14px !important; }
+  .tabata-pitido { display: none !important; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

@@ -147,6 +147,18 @@ Cualquier rutina puede usar lo mismo: en modo edición, el menú ⋯ de cada
 ejercicio define su bloque y lo une en superserie con el siguiente, y con
 *Semanas 4-6* elegido se editan las series de ese bloque.
 
+**Modo bloque en el entreno** (`src/utils/bloques.ts`). El entreno muestra el
+título de cada bloque y la nota de cada ejercicio en ámbar. Un bloque cuyo
+nombre dice "circuito" o "rondas", y los ejercicios seguidos de una superserie,
+van en una sola tarjeta por rondas: la próxima serie alterna A1 → B1 → C1 →
+A2…, entre ejercicios de la ronda no se descansa y el descanso arranca solo al
+cerrarla (con el tiempo de la nota, o el de siempre). Un bloque que dice
+"tabata" se hace con un cronómetro de intervalos a pantalla completa: lee
+trabajo, descanso y rondas del nombre (`Tabata 20" / 10" · 4 rondas`; si no,
+20 / 10 / 8), hace cada ejercicio por turno en cada ronda y, al terminar o al
+cerrarlo con alguna ronda hecha, tilda las series de esas rondas. Una rutina
+sin bloques ni superseries se ve igual que siempre.
+
 **Semana del plan.** Inicio pregunta una vez en qué semana estás; con eso
 muestra *Semana N de 6* y en la semana 4 pasa solo todas las rutinas a
 Semanas 4-6 (`src/utils/program.ts`). Pasada la 6, pregunta si arrancás de
@@ -193,7 +205,9 @@ Los colores, la escala tipográfica (11/12/13/15/17/22/26/32) y los radios
 las variables CSS (`--bg`, `--acc`, `--mute`…) y `S`/`T`/`R` de
 `src/theme.ts`. Cada color dice una sola cosa: coral es acción, ámbar es récord,
 verde es hecho, rojo es error. El texto de tercer nivel va en `mute` (`faint`
-sólo para trazos), y sobre coral el texto va oscuro (`onAcc`).
+sólo para trazos), y sobre coral el texto va oscuro (`onAcc`). Los colores del
+cronómetro del tabata están aparte, en `tabata` (`S.tabata`), para cambiarlos
+en un solo lugar.
 
 ## Iconos
 
