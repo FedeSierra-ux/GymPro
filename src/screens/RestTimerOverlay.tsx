@@ -1,9 +1,10 @@
-import { useAllExercises } from '../store/useStore'
+import { useAllExercises, useStore } from '../store/useStore'
 import { useWorkoutStore } from '../stores/workoutStore'
 import { formatKg, formatLoad } from '../utils/format'
 import { parseDecimal } from '../utils/numberInput'
 import { durationUnit, isDurationExercise } from '../utils/duration'
 import { S } from '../theme'
+import { agruparEntreno, grupoPorEjercicio, proximaSerie } from '../utils/bloques'
 
 const PRESETS = [
   { label: '0:45', seconds: 45 },
@@ -22,6 +23,7 @@ function formatTime(seconds: number) {
 
 export function RestTimerOverlay({ onMinimize }: { onMinimize?: () => void }) {
   const exercises = useAllExercises()
+  const routines = useStore((s) => s.routines)
   const {
     activeWorkout,
     dismissRestTimer,
@@ -49,6 +51,17 @@ export function RestTimerOverlay({ onMinimize }: { onMinimize?: () => void }) {
     if (exIdx < 0) return null
     const currentEx = activeWorkout.exercises[exIdx]
     if (!currentEx) return null
+    // En un circuito o superserie lo que sigue va por rondas (A2 después de C1).
+    const rutina = routines.find((r) => r.id === activeWorkout.routineId)
+    const bloques = agruparEntreno(activeWorkout.exercises, rutina?.exercises ?? [])
+    const grupo = grupoPorEjercicio(bloques).get(exIdx)
+    if (grupo && grupo.tipo !== 'suelto') {
+      const p = proximaSerie(activeWorkout.exercises, bloques, exIdx)
+      if (p) {
+        const ej = activeWorkout.exercises[p.exIdx]
+        return { exercise: exercises.find((e) => e.id === ej.exerciseId), setNum: p.setIdx + 1, set: ej.sets[p.setIdx] }
+      }
+    }
     const nextSetInSame = currentEx.sets.findIndex((s, i) => i > lastCompletedSet.setIdx && !s.completed)
     if (nextSetInSame >= 0) {
       return { exercise: exercises.find((e) => e.id === lastCompletedSet.exerciseId), setNum: nextSetInSame + 1, set: currentEx.sets[nextSetInSame] }

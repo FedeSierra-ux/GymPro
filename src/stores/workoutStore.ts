@@ -10,6 +10,29 @@ import { computeRecords, newRecords } from '../utils/records'
 import { rutinaEnUso, tieneVariante } from '../utils/routineVariant'
 import { semanaDeEntreno } from '../utils/program'
 import { descansoDeNota } from '../utils/restFromNote'
+import {
+  agruparEntreno, cierraRonda, descansoDeGrupo, grupoPorEjercicio, infoDe, leerTabata, lineaTabata,
+  rellenoTabata, rondaAlcanzada, rondasHechas, seriesDelTabata,
+  type Bloque, type ConfigTabata, type Grupo, type Tramo,
+} from '../utils/bloques'
+
+/**
+ * El tabata en curso. Se guarda con el entreno (no aparte) porque iOS cierra
+ * la PWA en segundo plano sin avisar: al volver, el cronómetro sigue donde
+ * va de verdad (sale de `inicio`, el reloj de pared) y, si terminó mientras
+ * tanto, marca las series. Son cuatro números; no hace falta subir la versión.
+ */
+export interface TabataEnCurso {
+  /** El primer ejercicio del bloque: lo identifica aunque se agreguen o saquen otros. */
+  primerEjercicio: string
+  /** Epoch ms del segundo 0 de la línea de tiempo. Pausar y saltar lo corren. */
+  inicio: number
+  /** Epoch ms en que se pausó, si está en pausa. */
+  pausadoEn?: number
+  /** Ronda (desde 0) en la que arrancó: las anteriores ya estaban hechas. */
+  desdeRonda: number
+  sonido: boolean
+}
 
 export interface ActiveWorkout {
   routineId: string
@@ -34,6 +57,7 @@ export interface ActiveWorkout {
   /** Descanso elegido a mano para un ejercicio en este entreno: manda sobre la nota. */
   restPorEjercicio?: Record<string, number>
   livePr?: { exerciseId: string; kg: number; reps: number } | null
+  tabata?: TabataEnCurso
 }
 
 interface WorkoutState {
@@ -78,6 +102,18 @@ interface WorkoutState {
   dismissLivePr: () => void
   /** Cierra el resumen y navega adonde dice el botón que se tocó. */
   dismissSummary: (destino?: import('../types').NavTab) => void
+  /** Abre el cronómetro del tabata del bloque al que pertenece el ejercicio `exerciseIdx`. */
+  empezarTabata: (exerciseIdx: number) => void
+  pausarTabata: () => void
+  reanudarTabata: () => void
+  /** Lleva el tabata al segundo `t` de su línea de tiempo (Anterior / Saltar). */
+  moverTabata: (t: number) => void
+  alternarSonidoTabata: () => void
+  /**
+   * Cierra el cronómetro y marca, con las mismas acciones que tildar a mano,
+   * las series de las rondas completas. Devuelve cuántas marcó.
+   */
+  cerrarTabata: () => number
 }
 
 // Duración con la que se guarda un entreno que se cerró solo: no se sabe
@@ -104,6 +140,42 @@ export function descansoPara(aw: ActiveWorkout, exerciseId: string): number {
   const routine = useStore.getState().routines.find((r) => r.id === aw.routineId)
   const nota = descansoDeNota(routine?.exercises.find((re) => re.exerciseId === exerciseId)?.note)
   return nota ?? aw.restDefaultSeconds ?? DESCANSO_INICIAL
+}
+
+/** Los bloques, circuitos y superseries del entreno, según la rutina. */
+export function bloquesDelEntreno(aw: Pick<ActiveWorkout, 'routineId' | 'exercises'>): Bloque[] {
+  const routine = useStore.getState().routines.find((r) => r.id === aw.routineId)
+  return agruparEntreno(aw.exercises, routine?.exercises ?? [])
+}
+
+/** El descanso al cerrar una ronda del grupo: lo elegido, la nota o el defecto. */
+function descansoDelGrupo(aw: ActiveWorkout, exercises: ActiveWorkoutExercise[], grupo: Grupo, nombreBloque?: string): number {
+  const routine = useStore.getState().routines.find((r) => r.id === aw.routineId)
+  return descansoDeGrupo({
+    ids: grupo.indices.map((i) => exercises[i].exerciseId),
+    notas: grupo.indices.map((i) => infoDe(exercises[i], routine?.exercises ?? [])?.note),
+    nombreBloque,
+    elegidos: aw.restPorEjercicio,
+    defecto: aw.restDefaultSeconds ?? DESCANSO_INICIAL,
+  })
+}
+
+/** El bloque del tabata en curso, con su configuración y su línea de tiempo. */
+export function tabataDelEntreno(aw: ActiveWorkout): { bloque: Bloque; grupo: Grupo; cfg: ConfigTabata; tramos: Tramo[] } | null {
+  if (!aw.tabata) return null
+  const primero = aw.tabata.primerEjercicio
+  for (const bloque of bloquesDelEntreno(aw)) {
+    const grupo = bloque.grupos.find((g) => g.tipo === 'tabata' && aw.exercises[g.indices[0]]?.exerciseId === primero)
+    if (!grupo) continue
+    const cfg = leerTabata(bloque.nombre)
+    return { bloque, grupo, cfg, tramos: lineaTabata(cfg, grupo.indices.length, aw.tabata.desdeRonda) }
+  }
+  return null
+}
+
+/** Segundos desde el arranque del tabata, en pausa o corriendo. */
+export function segundoTabata(t: TabataEnCurso, ahora: number): number {
+  return ((t.pausadoEn ?? ahora) - t.inicio) / 1000
 }
 
 /** La serie tiene lo mínimo para guardarse: reps, o tiempo en los ejercicios por tiempo. */
@@ -330,7 +402,13 @@ export const useWorkoutStore = create<WorkoutState>()(
             }
           })
           const completedSet = exercises[exerciseIdx].sets[setIdx]
-          const startRest = completedSet.completed && options?.startRest === true
+          // Circuito o superserie: el descanso arranca solo al cerrar la ronda
+          // (entre ejercicios de la misma ronda no se descansa). Mantener
+          // apretado en el medio de la ronda igual lo arranca: lo pidió.
+          const bloques = bloquesDelEntreno({ ...s.activeWorkout, exercises })
+          const grupo = grupoPorEjercicio(bloques).get(exerciseIdx)
+          const cierra = completedSet.completed && !!grupo && cierraRonda(exercises, grupo, exerciseIdx, setIdx)
+          const startRest = completedSet.completed && (options?.startRest === true || cierra)
           const lastCompletedSet = completedSet.completed
             ? {
                 exerciseId: exercises[exerciseIdx].exerciseId,
@@ -357,7 +435,11 @@ export const useWorkoutStore = create<WorkoutState>()(
           }
 
           // El descanso de este ejercicio (la nota de la rutina, o lo elegido a mano).
-          const descanso = startRest ? descansoPara(s.activeWorkout, exercises[exerciseIdx].exerciseId) : s.activeWorkout.restTotalSeconds
+          const descanso = !startRest
+            ? s.activeWorkout.restTotalSeconds
+            : cierra && grupo
+              ? descansoDelGrupo(s.activeWorkout, exercises, grupo, bloques.find((b) => b.indices.includes(exerciseIdx))?.nombre)
+              : descansoPara(s.activeWorkout, exercises[exerciseIdx].exerciseId)
           return {
             activeWorkout: {
               ...s.activeWorkout,
@@ -429,7 +511,11 @@ export const useWorkoutStore = create<WorkoutState>()(
           // Las series que faltaban pasan al nuevo; las que ya se hicieron se
           // quedan con el ejercicio original, que sigue en el entreno.
           const faltantes = actual.sets.length - hechas.length
-          const nuevo = buildActiveExercise(exerciseId, s.activeWorkout.routineId, Math.max(1, faltantes))
+          const nuevo: ActiveWorkoutExercise = {
+            ...buildActiveExercise(exerciseId, s.activeWorkout.routineId, Math.max(1, faltantes)),
+            // Hereda el bloque y la superserie del que reemplaza (ver bloques.ts).
+            reemplazaA: actual.reemplazaA ?? actual.exerciseId,
+          }
           const exercises = hechas.length > 0
             ? s.activeWorkout.exercises.flatMap((e, i) => (i === exerciseIdx ? [{ ...e, sets: hechas }, nuevo] : [e]))
             : s.activeWorkout.exercises.map((e, i) => (i === exerciseIdx ? nuevo : e))
@@ -651,6 +737,96 @@ export const useWorkoutStore = create<WorkoutState>()(
       dismissSummary: (destino = 'home') => {
         useStore.setState({ activeTab: destino })
         set({ summaryWorkout: null, summaryPrCount: 0 })
+      },
+
+      empezarTabata: (exerciseIdx) =>
+        set((s) => {
+          const aw = s.activeWorkout
+          if (!aw) return {}
+          const grupo = grupoPorEjercicio(bloquesDelEntreno(aw)).get(exerciseIdx)
+          if (!grupo || grupo.tipo !== 'tabata') return {}
+          return {
+            activeWorkout: {
+              ...aw,
+              // Un descanso corriendo sonaría en el medio del tabata.
+              restTimerVisible: false,
+              restEndsAt: undefined,
+              tabata: {
+                primerEjercicio: aw.exercises[grupo.indices[0]].exerciseId,
+                inicio: Date.now(),
+                desdeRonda: rondasHechas(aw.exercises, grupo),
+                sonido: aw.tabata?.sonido ?? true,
+              },
+            },
+          }
+        }),
+
+      pausarTabata: () =>
+        set((s) => {
+          const t = s.activeWorkout?.tabata
+          if (!s.activeWorkout || !t || t.pausadoEn) return {}
+          return { activeWorkout: { ...s.activeWorkout, tabata: { ...t, pausadoEn: Date.now() } } }
+        }),
+
+      reanudarTabata: () =>
+        set((s) => {
+          const t = s.activeWorkout?.tabata
+          if (!s.activeWorkout || !t || !t.pausadoEn) return {}
+          // Lo que estuvo en pausa no cuenta: el cero se corre hacia adelante.
+          return { activeWorkout: { ...s.activeWorkout, tabata: { ...t, inicio: t.inicio + (Date.now() - t.pausadoEn), pausadoEn: undefined } } }
+        }),
+
+      moverTabata: (segundo) =>
+        set((s) => {
+          const t = s.activeWorkout?.tabata
+          if (!s.activeWorkout || !t) return {}
+          const ref = t.pausadoEn ?? Date.now()
+          return { activeWorkout: { ...s.activeWorkout, tabata: { ...t, inicio: ref - Math.max(0, segundo) * 1000 } } }
+        }),
+
+      alternarSonidoTabata: () =>
+        set((s) => {
+          const t = s.activeWorkout?.tabata
+          if (!s.activeWorkout || !t) return {}
+          return { activeWorkout: { ...s.activeWorkout, tabata: { ...t, sonido: !t.sonido } } }
+        }),
+
+      cerrarTabata: () => {
+        const aw = get().activeWorkout
+        if (!aw?.tabata) return 0
+        const plan = tabataDelEntreno(aw)
+        const desde = aw.tabata.desdeRonda
+        const hasta = plan ? rondaAlcanzada(plan.tramos, segundoTabata(aw.tabata, Date.now()), desde) : desde
+        const series = plan ? seriesDelTabata(aw.exercises, plan.grupo, desde, hasta) : []
+        set({ activeWorkout: { ...aw, tabata: undefined } })
+        if (!plan || series.length === 0) return 0
+
+        // Se marcan con las mismas acciones que el tilde: completedAt, récords y
+        // validaciones quedan iguales que a mano. Las series vacías se completan
+        // antes (sin reps no se puede tildar).
+        const { routines, exercises: exDb, customExercises } = useStore.getState()
+        const todos = [...exDb, ...customExercises]
+        const guardada = routines.find((r) => r.id === aw.routineId)
+        const rutina = guardada ? rutinaEnUso(guardada) : undefined
+        let marcadas = 0
+        for (const { exIdx, setIdx } of series) {
+          const actual = get().activeWorkout?.exercises[exIdx]
+          const st = actual?.sets[setIdx]
+          if (!actual || !st || st.completed) continue
+          const exercise = todos.find((e) => e.id === actual.exerciseId)
+          const relleno = rellenoTabata({
+            porTiempo: isDurationExercise(exercise),
+            unidad: durationUnit(exercise),
+            duracion: st.duration,
+            reps: st.reps,
+            repsMin: rutina ? infoDe(actual, rutina.exercises)?.repsMin : undefined,
+            trabajo: plan.cfg.trabajo,
+          })
+          if (relleno) get().updateSetValue(exIdx, setIdx, relleno.campo, relleno.valor)
+          get().completeSet(exIdx, setIdx)
+          if (get().activeWorkout?.exercises[exIdx]?.sets[setIdx]?.completed) marcadas++
+        }
+        return marcadas
       },
     }),
     {

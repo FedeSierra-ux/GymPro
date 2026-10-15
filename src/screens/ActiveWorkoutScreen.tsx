@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { Fragment, useEffect, useState, useRef } from 'react'
 import { Dialog } from '../components/Dialog'
 import { useStore, useAllExercises } from '../store/useStore'
 import { seriesCargadas, useWorkoutStore } from '../stores/workoutStore'
@@ -15,11 +15,16 @@ import { decimalInputProps, integerInputProps, parseDecimal } from '../utils/num
 import { toDateInputValue, fromDateInputValue } from '../utils/dates'
 import { useLongPress } from '../utils/useLongPress'
 import { ExercisePickerSheet } from '../components/ExercisePickerSheet'
-import type { Exercise, ActiveWorkoutSet, PR, WorkoutSet } from '../types'
+import type { Exercise, ActiveWorkoutExercise, ActiveWorkoutSet, PR, WorkoutSet } from '../types'
 import { S } from '../theme'
 import { formatKg } from '../utils/format'
 import { rutinaEnUso } from '../utils/routineVariant'
 import { RoutineBadge } from '../components/RoutineIcon'
+import { TabataOverlay } from './TabataOverlay'
+import {
+  agruparEntreno, descansoDeGrupo, duracionTabata, infoDe, leerTabata, letra, lineaTabata, objetivoTabata, proximaEnGrupo,
+  proximaSerie, rondaHecha, rondasDelGrupo, rondasHechas, seriesDelTabata, type Bloque, type Grupo,
+} from '../utils/bloques'
 
 
 
@@ -81,6 +86,32 @@ function formatElapsed(ms: number) {
   const m = Math.floor((totalSeconds % 3600) / 60)
   const s = totalSeconds % 60
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
+function IconoReloj() {
+  return (
+    <svg width={14} height={14} viewBox="0 0 24 24" aria-hidden="true" style={{ flexShrink: 0 }}>
+      <g fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round"><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></g>
+    </svg>
+  )
+}
+
+function IconoAbajo() {
+  return (
+    <svg width={13} height={13} viewBox="0 0 24 24" aria-hidden="true" style={{ flexShrink: 0 }}>
+      <path d="M12 5v13M6.5 12.5 12 18l5.5-5.5" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+/** Título de un bloque entre tarjetas, como en el detalle de la rutina. */
+function EncabezadoBloque({ nombre, cantidad, primero }: { nombre: string; cantidad: number; primero: boolean }) {
+  return (
+    <div className="flex items-baseline justify-between" style={{ margin: primero ? '16px 18px 0' : '22px 18px 0', gap: 12 }}>
+      <h3 style={{ fontSize: 13, fontWeight: 700, color: S.ink, minWidth: 0 }}>{nombre}</h3>
+      <span style={{ fontSize: 11, color: S.mute, flexShrink: 0 }}>{cantidad} {cantidad === 1 ? 'ejercicio' : 'ejercicios'}</span>
+    </div>
+  )
 }
 
 /**
@@ -192,12 +223,23 @@ function textoRecord(pr: PR, byTime: boolean, unit: 'min' | 'seg'): string {
   return pr.kg > 0 ? `${formatKg(pr.kg)} × ${pr.reps}` : `${pr.reps} reps`
 }
 
-function estiloCampo(completada: boolean): React.CSSProperties {
+/** Con `unidad`, el campo lleva la unidad chiquita abajo del número. */
+function ConUnidad({ unidad, children }: { unidad?: string; children: React.ReactNode }) {
+  if (!unidad) return <>{children}</>
+  return (
+    <div style={{ position: 'relative', minWidth: 0 }}>
+      {children}
+      <span aria-hidden="true" style={{ position: 'absolute', left: 0, right: 0, bottom: 5, textAlign: 'center', fontSize: 11, fontWeight: 500, color: S.mute, pointerEvents: 'none', lineHeight: 1 }}>{unidad}</span>
+    </div>
+  )
+}
+
+function estiloCampo(completada: boolean, conUnidad = false): React.CSSProperties {
   return {
     width: '100%', minWidth: 0, textAlign: 'center',
     // 16px es el mínimo con el que iOS no hace zoom al enfocar el campo.
     fontSize: 17, fontWeight: 700, minHeight: 48,
-    borderRadius: 10, padding: '8px 4px',
+    borderRadius: 10, padding: conUnidad ? '2px 4px 14px' : '8px 4px',
     // Hecha: el campo se apaga, la marca verde del tilde ya dice que está lista.
     background: completada ? 'transparent' : S.surf2,
     border: `1px solid ${completada ? 'transparent' : S.line2}`,
@@ -254,7 +296,7 @@ function FinDescanso() {
 
 function SetRow({
   exIdx, setIdx, set, prev, byTime, unit, isBarbellLike, puedeBorrar, esProxima, recordGuardado, esRecord, pulso,
-  onUpdate, onToggleWarmup, onRemove, onComplete,
+  onUpdate, onToggleWarmup, onRemove, onComplete, unidades = false,
 }: {
   exIdx: number
   setIdx: number
@@ -277,6 +319,11 @@ function SetRow({
   onToggleWarmup: (e: number, s: number) => void
   onRemove: (e: number, s: number) => void
   onComplete: (e: number, s: number, o?: { startRest?: boolean }) => void
+  /**
+   * La unidad adentro del campo ("kg", "reps"). En circuitos y superseries no
+   * hay encabezado de tabla: cada ejercicio muestra una sola fila.
+   */
+  unidades?: boolean
 }) {
   const [destello, setDestello] = useState<'serie' | 'record' | null>(null)
   const [verDiscos, setVerDiscos] = useState(false)
@@ -389,22 +436,26 @@ function SetRow({
           </div>
         ) : (
           <>
-            <input
-              {...decimalInputProps} value={set.kg}
-              aria-label={`Peso en kg, serie ${setIdx + 1}`}
-              onChange={(e) => onUpdate(exIdx, setIdx, 'kg', e.target.value)}
-              onFocus={() => { if (isBarbellLike) setVerDiscos(true) }}
-              onBlur={() => setTimeout(() => setVerDiscos(false), 200)}
-              placeholder="0" disabled={completada}
-              style={estiloCampo(completada)}
-            />
-            <input
-              {...integerInputProps} value={set.reps}
-              aria-label={`Repeticiones, serie ${setIdx + 1}`}
-              onChange={(e) => onUpdate(exIdx, setIdx, 'reps', e.target.value)}
-              placeholder="0" disabled={completada}
-              style={estiloCampo(completada)}
-            />
+            <ConUnidad unidad={unidades ? 'kg' : undefined}>
+              <input
+                {...decimalInputProps} value={set.kg}
+                aria-label={`Peso en kg, serie ${setIdx + 1}`}
+                onChange={(e) => onUpdate(exIdx, setIdx, 'kg', e.target.value)}
+                onFocus={() => { if (isBarbellLike) setVerDiscos(true) }}
+                onBlur={() => setTimeout(() => setVerDiscos(false), 200)}
+                placeholder="0" disabled={completada}
+                style={estiloCampo(completada, unidades)}
+              />
+            </ConUnidad>
+            <ConUnidad unidad={unidades ? 'reps' : undefined}>
+              <input
+                {...integerInputProps} value={set.reps}
+                aria-label={`Repeticiones, serie ${setIdx + 1}`}
+                onChange={(e) => onUpdate(exIdx, setIdx, 'reps', e.target.value)}
+                placeholder="0" disabled={completada}
+                style={estiloCampo(completada, unidades)}
+              />
+            </ConUnidad>
           </>
         )}
 
@@ -478,7 +529,7 @@ export function ActiveWorkoutScreen() {
   const {
     activeWorkout, updateSetValue, toggleSetWarmup, completeSet, addSetToExercise, removeSetFromExercise,
     finishWorkout, cancelWorkout, setWorkoutDate,
-    addExerciseToWorkout, replaceExerciseInWorkout, removeExerciseFromWorkout,
+    addExerciseToWorkout, replaceExerciseInWorkout, removeExerciseFromWorkout, empezarTabata,
   } = useWorkoutStore()
 
   const [elapsed, setElapsed] = useState(0)
@@ -494,6 +545,8 @@ export function ActiveWorkoutScreen() {
   const [ultimoEjId, setUltimoEjId] = useState<string | null>(null)
   // Ejercicios terminados que el usuario volvió a abrir (los demás van colapsados).
   const [abiertos, setAbiertos] = useState<Set<string>>(() => new Set())
+  // En circuitos y superseries se ve sólo la serie de la ronda; estos muestran todas.
+  const [expandidos, setExpandidos] = useState<Set<string>>(() => new Set())
   // El descanso minimizado: se guarda para qué descanso (su restEndsAt), así el
   // próximo vuelve a abrirse solo.
   const [minimizadoPara, setMinimizadoPara] = useState<number | undefined>(undefined)
@@ -543,12 +596,15 @@ export function ActiveWorkoutScreen() {
   const progressPct = totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0
   const descansando = activeWorkout.restTimerVisible
   const panelDescanso = descansando && minimizadoPara !== activeWorkout.restEndsAt
-  const pendiente = (i: number) => activeWorkout.exercises[i]?.sets.some((st) => !st.completed)
+  // Bloques, circuitos y superseries de la rutina (ver utils/bloques.ts). Una
+  // rutina sin nada de eso da un solo bloque sin nombre con todo suelto, y se
+  // ve igual que siempre.
+  const bloques = agruparEntreno(activeWorkout.exercises, guardada?.exercises ?? [])
   const ultimoEj = ultimoEjId ? activeWorkout.exercises.findIndex((e) => e.exerciseId === ultimoEjId) : -1
-  const ejActual = ultimoEj >= 0 && pendiente(ultimoEj)
-    ? ultimoEj
-    : activeWorkout.exercises.findIndex((_, i) => pendiente(i))
-  const proximaSerie = ejActual >= 0 ? activeWorkout.exercises[ejActual].sets.findIndex((st) => !st.completed) : -1
+  // La próxima serie: lineal en lo suelto, por rondas en circuitos y superseries.
+  const proxima = proximaSerie(activeWorkout.exercises, bloques, ultimoEj)
+  const ejActual = proxima?.exIdx ?? -1
+  const serieProxima = proxima?.setIdx ?? -1
   const confirmarSerie = (e: number, st: number, o?: { startRest?: boolean }) => {
     setUltimoEjId(activeWorkout.exercises[e]?.exerciseId ?? null)
     completeSet(e, st, o)
@@ -565,7 +621,457 @@ export function ActiveWorkoutScreen() {
     return []
   }
 
+  /** Lo que necesita la tarjeta de un ejercicio: récord, la vez anterior, sugerencia. */
+  const datosDe = (activeEx: ActiveWorkoutExercise) => {
+    const ex = exercises.find((e) => e.id === activeEx.exerciseId)
+    if (!ex) return null
+    const config = muscleGroupConfig[ex.muscleGroup]
+    const pr = prs.find((p) => p.exerciseId === ex.id)
+    const isBarbellLike = ex.equipmentType === 'barra'
+    const prevPorSerie = emparejarAnteriores(activeEx.sets, ultimasSeries(ex.id))
+    // La mejor serie hecha que supera el récord: sólo esa se marca.
+    let recordIdx = -1
+    let mejorValor = -1
+    activeEx.sets.forEach((st, i) => {
+      if (!st.completed || st.isWarmup) return
+      const k = parseDecimal(st.kg) || 0
+      const r = parseInt(st.reps) || 0
+      const sg = isDurationExercise(ex) ? toSeconds(st.duration ?? '', durationUnit(ex)) : 0
+      if (!superaRecord(pr, k, r, sg, isDurationExercise(ex))) return
+      const v = pesoDeSerie(k, r, sg, isDurationExercise(ex))
+      if (v > mejorValor) { mejorValor = v; recordIdx = i }
+    })
+    const completedCount = activeEx.sets.filter((s) => s.completed).length
+    const byTime = isDurationExercise(ex)
+    const unit = durationUnit(ex)
+    const routineEx = routine?.exercises.find((re) => re.exerciseId === ex.id)
+    // Sugerencia de doble progresión: sólo tiene sentido con kg y reps.
+    const suggestion = routineEx && !byTime
+      ? suggestNextWeight(ex, routineEx, workouts, ex.id)
+      : null
+    const terminado = activeEx.sets.length > 0 && completedCount === activeEx.sets.length
+    return { ex, config, pr, isBarbellLike, prevPorSerie, recordIdx, completedCount, byTime, unit, routineEx, suggestion, terminado }
+  }
+  type Datos = NonNullable<ReturnType<typeof datosDe>>
 
+  /** Ejercicio terminado, cerrado en una línea con su resumen. Tocarlo lo abre. */
+  const filaTerminado = (d: Datos, activeEx: ActiveWorkoutExercise, abrir: () => void) => {
+    const efectivas = activeEx.sets.filter((st) => !st.isWarmup)
+    const mejor = efectivas.reduce<ActiveWorkoutSet | null>((m, st) =>
+      !m || (parseDecimal(st.kg) || 0) > (parseDecimal(m.kg) || 0) ? st : m, null)
+    const resumen = d.byTime
+      ? `${efectivas.length} ${efectivas.length === 1 ? 'serie' : 'series'}`
+      : mejor && (parseDecimal(mejor.kg) || 0) > 0
+        ? `${efectivas.length} × mejor ${formatKg(parseDecimal(mejor.kg))}×${mejor.reps}`
+        : `${efectivas.length} ${efectivas.length === 1 ? 'serie' : 'series'}`
+    return (
+      <button
+        key={activeEx.exerciseId}
+        onClick={abrir}
+        aria-label={`${d.ex.nameEs}, terminado: ${resumen}. Tocá para abrir`}
+        style={{
+          margin: '8px 16px 0', width: 'calc(100% - 32px)', display: 'flex', alignItems: 'center', gap: 10,
+          background: 'none', border: `1px solid ${S.line}`, borderRadius: 12, padding: '10px 14px',
+          cursor: 'pointer', textAlign: 'left', minHeight: 48,
+        }}
+      >
+        <span style={{ width: 22, height: 22, borderRadius: 11, background: S.good, color: S.bg, fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>✓</span>
+        <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 600, color: S.dim, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.ex.nameEs}</span>
+        <span className="num" style={{ fontSize: 12, color: S.dim, flexShrink: 0 }}>{resumen}</span>
+      </button>
+    )
+  }
+
+  /**
+   * Nombre, nota de la rutina (en ámbar, como en el detalle) y grupo muscular
+   * con el récord. En circuitos y superseries (`compacto`) el nombre puede ir en
+   * dos renglones y, si hay nota, va sólo la nota, como en la maqueta.
+   */
+  const nombreDe = (d: Datos, compacto = false) => (
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={compacto
+        ? { fontSize: 15, fontWeight: 700, color: S.ink, lineHeight: 1.25, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', overflowWrap: 'break-word' }
+        : { fontSize: 15, fontWeight: 700, color: S.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.ex.nameEs}</div>
+      {d.routineEx?.note && (
+        <div style={{ fontSize: 12, color: S.acc2, marginTop: 2, lineHeight: 1.35 }}>{d.routineEx.note}</div>
+      )}
+      {!(compacto && d.routineEx?.note) && <div style={{ fontSize: 11, color: S.dim, marginTop: 2 }}>
+        <span style={{ color: d.config.color }}>{d.config.label}</span>
+        {d.pr && <span style={{ color: S.acc2 }}> · 🏆 {d.byTime ? formatDuration(d.pr.durationSec ?? 0) : d.pr.kg > 0 ? `${formatKg(d.pr.kg)}×${d.pr.reps}` : `${d.pr.reps} reps`}</span>}
+      </div>}
+    </div>
+  )
+
+  const miniatura = (d: Datos) => (
+    <button
+      onClick={() => setModalExercise(d.ex)}
+      aria-label={`Ver ${d.ex.nameEs}`}
+      style={{ flexShrink: 0, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+    >
+      <ExerciseThumbnail exercise={d.ex} size={40} />
+    </button>
+  )
+
+  /** Menú del ejercicio: cambiarlo o sacarlo sin salir del entreno */
+  const botonMenu = (d: Datos, exIdx: number) => (
+    <button
+      onClick={() => setMenuEjercicio(exIdx)}
+      aria-label={`Opciones de ${d.ex.nameEs}`}
+      style={{ width: 44, height: 44, flexShrink: 0, marginRight: -8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', color: S.dim, fontSize: 17, cursor: 'pointer', lineHeight: 1 }}
+    >⋯</button>
+  )
+
+  /** Sugerencia de doble progresión */
+  const sugerenciaDe = (d: Datos, activeEx: ActiveWorkoutExercise, exIdx: number) => {
+    const suggestion = d.suggestion
+    if (!suggestion) return null
+    return (
+      <div style={{
+        margin: '0 14px 10px', padding: '8px 10px', borderRadius: 12,
+        display: 'flex', alignItems: 'center', gap: 8,
+        background: suggestion.reason === 'subir' ? 'rgba(52,211,153,0.10)' : 'rgba(255,255,255,0.035)',
+        border: `1px solid ${suggestion.reason === 'subir' ? 'rgba(52,211,153,0.30)' : S.line2}`,
+      }}>
+        <span style={{ fontSize: 13, flexShrink: 0 }}>
+          {suggestion.reason === 'subir' ? '▲' : suggestion.reason === 'bajar' ? '▼' : suggestion.reason === 'primera-vez' ? '🎯' : '='}
+        </span>
+        <span style={{ flex: 1, fontSize: 11, color: suggestion.reason === 'subir' ? S.good : S.dim, lineHeight: 1.4 }}>
+          {suggestion.note}
+        </span>
+        {/* Las series arrancan con el máximo de la última vez; el
+            peso sugerido se aplica sólo si el usuario lo pide. */}
+        {suggestion.kg > 0 && activeEx.sets.some((st) => !st.completed && !st.isWarmup && parseDecimal(st.kg) !== suggestion.kg) && (
+          <button
+            onClick={() => activeEx.sets.forEach((st, si) => {
+              if (!st.completed && !st.isWarmup) updateSetValue(exIdx, si, 'kg', String(suggestion.kg))
+            })}
+            aria-label={`Usar ${formatKg(suggestion.kg)} kg en las series que faltan`}
+            style={{
+              flexShrink: 0, minHeight: 32, padding: '0 10px', borderRadius: 8,
+              background: suggestion.reason === 'subir' ? 'rgba(52,211,153,0.16)' : S.surf2,
+              border: `1px solid ${suggestion.reason === 'subir' ? 'rgba(52,211,153,0.40)' : S.line2}`,
+              color: suggestion.reason === 'subir' ? S.good : S.ink,
+              fontSize: 11, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+            }}
+          >
+            Usar {formatKg(suggestion.kg)} kg
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  const filaDe = (d: Datos, activeEx: ActiveWorkoutExercise, exIdx: number, setIdx: number, unidades = false) => {
+    const set = activeEx.sets[setIdx]
+    return (
+      <SetRow
+        key={setIdx}
+        exIdx={exIdx} setIdx={setIdx} set={set} prev={d.prevPorSerie[setIdx]}
+        byTime={d.byTime} unit={d.unit}
+        isBarbellLike={d.isBarbellLike}
+        puedeBorrar={!set.completed && activeEx.sets.length > 1}
+        onUpdate={updateSetValue}
+        onToggleWarmup={toggleSetWarmup}
+        onRemove={removeSetFromExercise}
+        esProxima={exIdx === ejActual && setIdx === serieProxima}
+        pulso={finDescanso != null && exIdx === ejActual && setIdx === serieProxima}
+        recordGuardado={d.pr}
+        esRecord={setIdx === d.recordIdx}
+        onComplete={confirmarSerie}
+        unidades={unidades}
+      />
+    )
+  }
+
+  const botonSerie = (label: string, onClick: () => void) => (
+    <button onClick={onClick}
+      style={{ background: S.surf2, border: `1px solid ${S.line2}`, borderRadius: 12, color: S.dim, fontSize: 13, fontWeight: 600, minHeight: 44, padding: '0 18px', cursor: 'pointer' }}>
+      {label}
+    </button>
+  )
+
+  /** La tarjeta de un ejercicio suelto: la de siempre. */
+  const tarjetaEjercicio = (activeEx: ActiveWorkoutExercise, exIdx: number) => {
+    const d = datosDe(activeEx)
+    if (!d) return null
+    const { byTime, unit, completedCount, terminado } = d
+
+    if (terminado && !abiertos.has(activeEx.exerciseId)) {
+      return filaTerminado(d, activeEx, () => setAbiertos((prev) => new Set(prev).add(activeEx.exerciseId)))
+    }
+
+    return (
+      <div key={activeEx.exerciseId} style={{ margin: '12px 16px 0', background: S.surf, borderRadius: 16, overflow: 'hidden', border: `1px solid ${S.line2}` }}>
+
+        {/* Encabezado del ejercicio */}
+        <div style={{ padding: '14px 14px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 12, background: S.surf2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: S.acc, border: `1px solid ${S.line2}`, flexShrink: 0 }}>
+            {exIdx + 1}
+          </div>
+          {miniatura(d)}
+          {nombreDe(d)}
+          {terminado ? (
+            <button
+              onClick={() => setAbiertos((prev) => { const n = new Set(prev); n.delete(activeEx.exerciseId); return n })}
+              aria-label="Cerrar el ejercicio terminado"
+              className="num"
+              style={{ fontSize: 13, fontWeight: 700, color: S.good, background: 'none', border: 'none', cursor: 'pointer', minHeight: 44, padding: '0 4px' }}
+            >
+              {completedCount}/{activeEx.sets.length} ▴
+            </button>
+          ) : (
+            <div className="num" style={{ fontSize: 13, fontWeight: 600, color: S.dim }}>
+              {completedCount}/{activeEx.sets.length}
+            </div>
+          )}
+          {botonMenu(d, exIdx)}
+        </div>
+
+        {sugerenciaDe(d, activeEx, exIdx)}
+
+        {/* Encabezado de la tabla */}
+        <div style={{ display: 'grid', gridTemplateColumns: byTime ? SET_GRID_TIEMPO : SET_GRID, padding: '0 14px 6px', gap: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: S.mute, textAlign: 'center' }}>Set</div>
+          <div style={{ fontSize: 11, fontWeight: 600, color: S.mute, textAlign: 'center' }}>Anterior</div>
+          <div style={{ fontSize: 11, fontWeight: 600, color: S.mute, textAlign: 'center' }}>
+            {byTime ? (unit === 'min' ? 'Minutos' : 'Segundos') : 'KG'}
+          </div>
+          {!byTime && <div style={{ fontSize: 11, fontWeight: 600, color: S.mute, textAlign: 'center' }}>Reps</div>}
+          <div />
+        </div>
+
+        {/* Series */}
+        {activeEx.sets.map((_, setIdx) => filaDe(d, activeEx, exIdx, setIdx))}
+
+        <TipsRow exerciseId={d.ex.id} />
+
+        {/* Add set button */}
+        <div style={{ padding: '10px 16px 14px' }}>
+          {botonSerie('+ Serie', () => addSetToExercise(exIdx))}
+        </div>
+      </div>
+    )
+  }
+
+  /**
+   * Circuito o superserie: una sola tarjeta con la ronda, los ejercicios con
+   * letra (A, B, C) y, de cada uno, la serie de la ronda en curso. La próxima
+   * va por rondas y el descanso arranca al cerrar la ronda.
+   */
+  const tarjetaGrupo = (g: Grupo, bloque: Bloque) => {
+    const ejs = activeWorkout.exercises
+    const clave = `g:${ejs[g.indices[0]].exerciseId}`
+    const datos = g.indices.map((i) => datosDe(ejs[i]))
+    const total = rondasDelGrupo(ejs, g)
+    const prox = proximaEnGrupo(ejs, g)
+    const hecho = !prox
+    const abierto = abiertos.has(clave)
+    if (hecho && !abierto) {
+      return g.indices.map((i, k) => {
+        const d = datos[k]
+        return d ? filaTerminado(d, ejs[i], () => setAbiertos((prev) => new Set(prev).add(clave))) : null
+      })
+    }
+    const ronda = prox ? prox.setIdx : total - 1
+    const superserie = g.tipo === 'superserie'
+    const hechas = Array.from({ length: total }, (_, r) => rondaHecha(ejs, g, r))
+    const cantHechas = hechas.filter(Boolean).length
+    const ultimaSerie = activeWorkout.lastCompletedSet
+    // El descanso que corre es de este grupo si lo arrancó el cierre de una ronda acá.
+    const descansoDeEste = descansando && !!ultimaSerie
+      && g.indices.some((i) => ejs[i].exerciseId === ultimaSerie.exerciseId)
+      && rondaHecha(ejs, g, ultimaSerie.setIdx)
+    const descanso = descansoDeGrupo({
+      ids: g.indices.map((i) => ejs[i].exerciseId),
+      notas: g.indices.map((i) => infoDe(ejs[i], guardada?.exercises ?? [])?.note),
+      nombreBloque: bloque.nombre,
+      elegidos: activeWorkout.restPorEjercicio,
+      defecto: activeWorkout.restDefaultSeconds ?? 75,
+    })
+    const tipoNombre = superserie ? 'Superserie' : 'Circuito'
+
+    return (
+      <div key={clave} style={{ margin: '12px 16px 0', background: S.surf, borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(232,99,74,0.35)' }}
+        role="group" aria-label={`${tipoNombre}${bloque.nombre && !superserie ? ` ${bloque.nombre}` : ''}, ronda ${ronda + 1} de ${total}`}>
+        {/* La ronda */}
+        <div style={{ padding: '12px 14px 11px', background: 'rgba(232,99,74,0.06)', borderBottom: `1px solid ${S.line}` }}>
+          <div className="flex items-center justify-between" style={{ gap: 12 }}>
+            <div style={{ minWidth: 0 }}>
+              {superserie && <div style={{ fontSize: 11, fontWeight: 700, color: S.acc, letterSpacing: '0.02em' }}>Superserie</div>}
+              <div style={{ fontSize: 15, fontWeight: 700, color: S.ink }}>
+                {hecho ? `${total} de ${total} rondas` : `Ronda ${ronda + 1} de ${total}`}
+              </div>
+            </div>
+            <div className="flex" style={{ gap: 4, flexShrink: 1, minWidth: 0 }} role="img"
+              aria-label={`${cantHechas} de ${total} ${total === 1 ? 'ronda hecha' : 'rondas hechas'}`}>
+              {hechas.map((ok, r) => (
+                <i key={r} style={{ width: 22, flexShrink: 1, minWidth: 6, height: 5, borderRadius: 3, display: 'block', background: ok ? S.good : r === ronda ? S.acc : S.line2 }} />
+              ))}
+            </div>
+          </div>
+          {!hecho ? (
+            <div className="flex items-center" style={{ gap: 6, marginTop: 6, fontSize: 12, color: S.dim }}>
+              <IconoReloj />
+              {descansoDeEste && ultimaSerie
+                ? <span>Ronda {ultimaSerie.setIdx + 1} cerrada: descanso <span className="num">{formatRest(activeWorkout.restTotalSeconds)}</span> corriendo</span>
+                : <span>Descanso <span className="num">{formatRest(descanso)}</span> al cerrar la ronda</span>}
+            </div>
+          ) : (
+            <button
+              onClick={() => setAbiertos((prev) => { const n = new Set(prev); n.delete(clave); return n })}
+              aria-label={`Cerrar ${tipoNombre.toLowerCase()} terminado`}
+              style={{ marginTop: 4, minHeight: 44, padding: 0, background: 'none', border: 'none', color: S.good, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+            >
+              Hecho ▴
+            </button>
+          )}
+        </div>
+
+        {g.indices.map((exIdx, k) => {
+          const d = datos[k]
+          if (!d) return null
+          const activeEx = ejs[exIdx]
+          const expandido = hecho || expandidos.has(activeEx.exerciseId)
+          const actual = ejActual === exIdx
+          const siguienteHot = k < g.indices.length - 1 && ejActual === g.indices[k + 1]
+          return (
+            <Fragment key={activeEx.exerciseId}>
+              <div style={{ padding: k === 0 ? '12px 14px 8px' : '12px 14px 8px', display: 'flex', alignItems: 'center', gap: 10, borderTop: k === 0 ? 'none' : `1px solid ${S.line}` }}>
+                {/* La letra y la miniatura; en pantallas angostas la letra va sobre la miniatura (index.css). */}
+                <div className="grupo-ident" style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                  <div aria-hidden="true" className="grupo-letra" style={{
+                    width: 32, height: 32, borderRadius: 12, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 12, fontWeight: 700,
+                    background: actual ? S.acc : S.surf2, color: actual ? S.onAcc : S.acc,
+                    border: `1px solid ${actual ? S.acc : S.line2}`,
+                  }}>
+                    {letra(k)}
+                  </div>
+                  {miniatura(d)}
+                </div>
+                {nombreDe(d, true)}
+                <button
+                  onClick={() => setExpandidos((prev) => { const n = new Set(prev); if (n.has(activeEx.exerciseId)) n.delete(activeEx.exerciseId); else n.add(activeEx.exerciseId); return n })}
+                  disabled={hecho}
+                  aria-label={`${letra(k)}: ${d.completedCount} de ${activeEx.sets.length} series. ${expandido ? 'Tocá para ver sólo la ronda' : 'Tocá para ver todas'}`}
+                  aria-expanded={expandido}
+                  className="num"
+                  style={{ fontSize: 13, fontWeight: d.terminado ? 700 : 600, color: d.terminado ? S.good : S.dim, background: 'none', border: 'none', cursor: hecho ? 'default' : 'pointer', minHeight: 44, minWidth: 44, padding: '0 4px' }}
+                >
+                  {d.completedCount}/{activeEx.sets.length}{!hecho && expandido ? ' ▴' : ''}
+                </button>
+                {botonMenu(d, exIdx)}
+              </div>
+
+              {expandido && sugerenciaDe(d, activeEx, exIdx)}
+              {expandido
+                ? activeEx.sets.map((_, setIdx) => filaDe(d, activeEx, exIdx, setIdx, true))
+                : activeEx.sets[ronda] && filaDe(d, activeEx, exIdx, ronda, true)}
+              {expandido && !hecho && (
+                <>
+                  <TipsRow exerciseId={d.ex.id} />
+                  <div style={{ padding: '10px 16px 12px' }}>{botonSerie('+ Serie', () => addSetToExercise(exIdx))}</div>
+                </>
+              )}
+
+              {/* Entre ejercicios de la misma ronda no se descansa */}
+              {k < g.indices.length - 1 && !hecho && (
+                <div className="flex items-center" style={{
+                  gap: 6, padding: '5px 14px 5px 26px', fontSize: 11, borderTop: `1px solid ${S.line}`,
+                  background: 'rgba(236,238,244,0.015)', color: siguienteHot ? S.acc : S.mute, fontWeight: siguienteHot ? 600 : 400,
+                }}>
+                  <IconoAbajo />
+                  {siguienteHot ? `Seguí con ${letra(k + 1)}, sin descanso` : 'Sin descanso'}
+                </div>
+              )}
+            </Fragment>
+          )
+        })}
+
+        {!hecho && (
+          <div style={{ padding: '10px 14px 14px', borderTop: `1px solid ${S.line}` }}>
+            {botonSerie('+ Ronda', () => g.indices.forEach((i) => addSetToExercise(i)))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  /** El tabata en la lista: los ejercicios, cuánto dura y el botón que abre el cronómetro. */
+  const tarjetaTabata = (g: Grupo, bloque: Bloque) => {
+    const ejs = activeWorkout.exercises
+    const clave = `t:${ejs[g.indices[0]].exerciseId}`
+    const datos = g.indices.map((i) => datosDe(ejs[i]))
+    const todas = g.indices.every((i) => ejs[i].sets.every((st) => st.completed))
+    if (todas && !abiertos.has(clave)) {
+      return g.indices.map((i, k) => {
+        const d = datos[k]
+        return d ? filaTerminado(d, ejs[i], () => setAbiertos((prev) => new Set(prev).add(clave))) : null
+      })
+    }
+    const cfg = leerTabata(bloque.nombre)
+    const hechas = rondasHechas(ejs, g)
+    const faltan = seriesDelTabata(ejs, g, hechas, cfg.rondas).length
+    const duracion = duracionTabata(lineaTabata(cfg, g.indices.length))
+    const minutos = Math.max(1, Math.round(duracion / 60))
+    const pendienteTabata = hechas < cfg.rondas && faltan > 0
+    return (
+      <div key={clave} style={{ margin: '12px 16px 0', background: S.surf, borderRadius: 16, overflow: 'hidden', border: `1px solid ${S.line2}`, paddingBottom: 14 }}>
+        <ul style={{ listStyle: 'none', margin: 0, padding: '6px 0' }}>
+          {g.indices.map((exIdx, k) => {
+            const d = datos[k]
+            if (!d) return null
+            return (
+              <li key={ejs[exIdx].exerciseId} className="flex items-center" style={{ gap: 10, padding: '7px 14px', fontSize: 13, color: S.ink }}>
+                <span className="num" aria-hidden="true" style={{ width: 22, textAlign: 'center', fontSize: 12, fontWeight: 700, color: d.terminado ? S.good : S.acc, flexShrink: 0 }}>
+                  {d.terminado ? '✓' : k + 1}
+                </span>
+                <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {d.ex.nameEs}{d.terminado && <span className="sr-only"> (hecho)</span>}
+                </span>
+                <span className="num" style={{ marginLeft: 'auto', fontSize: 12, color: S.dim, flexShrink: 0 }}>{objetivoTabata(d.routineEx, true)}</span>
+              </li>
+            )
+          })}
+        </ul>
+        <div className="flex items-center" style={{ gap: 6, padding: '0 14px', fontSize: 12, color: S.dim }}>
+          <IconoReloj />
+          <span><span className="num">{minutos}</span> min · {cfg.trabajo} s de trabajo y {cfg.descanso} s de descanso</span>
+        </div>
+        {hechas > 0 && (
+          <div style={{ padding: '6px 14px 0', fontSize: 12, color: S.good, fontWeight: 600 }}>
+            {Math.min(hechas, cfg.rondas)} de {cfg.rondas} rondas hechas
+          </div>
+        )}
+        {pendienteTabata ? (
+          <>
+            <div style={{ padding: '12px 14px 0' }}>
+              <button
+                onClick={() => { primeAudio(); empezarTabata(g.indices[0]) }}
+                className="flex items-center justify-center"
+                style={{ width: '100%', minHeight: 48, gap: 8, borderRadius: 12, background: S.acc, color: S.onAcc, border: 'none', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
+              >
+                <svg width={18} height={18} viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor" /></svg>
+                {hechas > 0 ? `Seguir tabata · ronda ${hechas + 1}` : 'Empezar tabata'}
+              </button>
+            </div>
+            <p style={{ padding: '8px 14px 0', fontSize: 11, color: S.mute, textAlign: 'center' }}>
+              Al terminar se marcan las {faltan} series del bloque
+            </p>
+          </>
+        ) : todas && (
+          <div style={{ padding: '6px 14px 0' }}>
+            <button
+              onClick={() => setAbiertos((prev) => { const n = new Set(prev); n.delete(clave); return n })}
+              style={{ minHeight: 44, padding: 0, background: 'none', border: 'none', color: S.good, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+            >
+              Hecho ▴
+            </button>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="flex-1 min-h-0 flex flex-col screen-enter relative" style={{ background: S.bg }}>
@@ -621,185 +1127,20 @@ export function ActiveWorkoutScreen() {
 
       {/* Exercise list */}
       <div className="flex-1 min-h-0 scroll-area">
-        {activeWorkout.exercises.map((activeEx, exIdx) => {
-          const ex = exercises.find((e) => e.id === activeEx.exerciseId)
-          if (!ex) return null
-          const config = muscleGroupConfig[ex.muscleGroup]
-          const pr = prs.find((p) => p.exerciseId === ex.id)
-          const isBarbellLike = ex.equipmentType === 'barra'
-          const prevPorSerie = emparejarAnteriores(activeEx.sets, ultimasSeries(ex.id))
-          // La mejor serie hecha que supera el récord: sólo esa se marca.
-          let recordIdx = -1
-          let mejorValor = -1
-          activeEx.sets.forEach((st, i) => {
-            if (!st.completed || st.isWarmup) return
-            const k = parseDecimal(st.kg) || 0
-            const r = parseInt(st.reps) || 0
-            const sg = isDurationExercise(ex) ? toSeconds(st.duration ?? '', durationUnit(ex)) : 0
-            if (!superaRecord(pr, k, r, sg, isDurationExercise(ex))) return
-            const v = pesoDeSerie(k, r, sg, isDurationExercise(ex))
-            if (v > mejorValor) { mejorValor = v; recordIdx = i }
-          })
-          const completedCount = activeEx.sets.filter((s) => s.completed).length
-          const byTime = isDurationExercise(ex)
-          const unit = durationUnit(ex)
-          const routineEx = routine?.exercises.find((re) => re.exerciseId === ex.id)
-          // Sugerencia de doble progresión: sólo tiene sentido con kg y reps.
-          const suggestion = routineEx && !byTime
-            ? suggestNextWeight(ex, routineEx, workouts, ex.id)
-            : null
-
-          // Ejercicio terminado: se cierra en una línea con su resumen. Tocarlo lo abre.
-          const terminado = activeEx.sets.length > 0 && completedCount === activeEx.sets.length
-          if (terminado && !abiertos.has(activeEx.exerciseId)) {
-            const efectivas = activeEx.sets.filter((st) => !st.isWarmup)
-            const mejor = efectivas.reduce<ActiveWorkoutSet | null>((m, st) =>
-              !m || (parseDecimal(st.kg) || 0) > (parseDecimal(m.kg) || 0) ? st : m, null)
-            const resumen = byTime
-              ? `${efectivas.length} ${efectivas.length === 1 ? 'serie' : 'series'}`
-              : mejor && (parseDecimal(mejor.kg) || 0) > 0
-                ? `${efectivas.length} × mejor ${formatKg(parseDecimal(mejor.kg))}×${mejor.reps}`
-                : `${efectivas.length} ${efectivas.length === 1 ? 'serie' : 'series'}`
-            return (
-              <button
-                key={activeEx.exerciseId}
-                onClick={() => setAbiertos((prev) => new Set(prev).add(activeEx.exerciseId))}
-                aria-label={`${ex.nameEs}, terminado: ${resumen}. Tocá para abrir`}
-                style={{
-                  margin: '8px 16px 0', width: 'calc(100% - 32px)', display: 'flex', alignItems: 'center', gap: 10,
-                  background: 'none', border: `1px solid ${S.line}`, borderRadius: 12, padding: '10px 14px',
-                  cursor: 'pointer', textAlign: 'left', minHeight: 48,
-                }}
-              >
-                <span style={{ width: 22, height: 22, borderRadius: 11, background: S.good, color: S.bg, fontSize: 12, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>✓</span>
-                <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 600, color: S.dim, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ex.nameEs}</span>
-                <span className="num" style={{ fontSize: 12, color: S.dim, flexShrink: 0 }}>{resumen}</span>
-              </button>
-            )
-          }
-
-          return (
-            <div key={activeEx.exerciseId} style={{ margin: '12px 16px 0', background: S.surf, borderRadius: 16, overflow: 'hidden', border: `1px solid ${S.line2}` }}>
-
-              {/* Encabezado del ejercicio */}
-              <div style={{ padding: '14px 14px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 32, height: 32, borderRadius: 12, background: S.surf2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: S.acc, border: `1px solid ${S.line2}`, flexShrink: 0 }}>
-                  {exIdx + 1}
-                </div>
-                <button
-                  onClick={() => setModalExercise(ex)}
-                  aria-label={`Ver ${ex.nameEs}`}
-                  style={{ flexShrink: 0, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                >
-                  <ExerciseThumbnail exercise={ex} size={40} />
-                </button>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: S.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ex.nameEs}</div>
-                  <div style={{ fontSize: 11, color: S.dim, marginTop: 2 }}>
-                    <span style={{ color: config.color }}>{config.label}</span>
-                    {pr && <span style={{ color: S.acc2 }}> · 🏆 {byTime ? formatDuration(pr.durationSec ?? 0) : pr.kg > 0 ? `${formatKg(pr.kg)}×${pr.reps}` : `${pr.reps} reps`}</span>}
-                  </div>
-                </div>
-                {terminado ? (
-                  <button
-                    onClick={() => setAbiertos((prev) => { const n = new Set(prev); n.delete(activeEx.exerciseId); return n })}
-                    aria-label="Cerrar el ejercicio terminado"
-                    className="num"
-                    style={{ fontSize: 13, fontWeight: 700, color: S.good, background: 'none', border: 'none', cursor: 'pointer', minHeight: 44, padding: '0 4px' }}
-                  >
-                    {completedCount}/{activeEx.sets.length} ▴
-                  </button>
-                ) : (
-                  <div className="num" style={{ fontSize: 13, fontWeight: 600, color: S.dim }}>
-                    {completedCount}/{activeEx.sets.length}
-                  </div>
-                )}
-                {/* Menú del ejercicio: cambiarlo o sacarlo sin salir del entreno */}
-                <button
-                  onClick={() => setMenuEjercicio(exIdx)}
-                  aria-label={`Opciones de ${ex.nameEs}`}
-                  style={{ width: 44, height: 44, flexShrink: 0, marginRight: -8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', color: S.dim, fontSize: 17, cursor: 'pointer', lineHeight: 1 }}
-                >⋯</button>
-              </div>
-
-              {/* Sugerencia de doble progresión */}
-              {suggestion && (
-                <div style={{
-                  margin: '0 14px 10px', padding: '8px 10px', borderRadius: 12,
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  background: suggestion.reason === 'subir' ? 'rgba(52,211,153,0.10)' : 'rgba(255,255,255,0.035)',
-                  border: `1px solid ${suggestion.reason === 'subir' ? 'rgba(52,211,153,0.30)' : S.line2}`,
-                }}>
-                  <span style={{ fontSize: 13, flexShrink: 0 }}>
-                    {suggestion.reason === 'subir' ? '▲' : suggestion.reason === 'bajar' ? '▼' : suggestion.reason === 'primera-vez' ? '🎯' : '='}
-                  </span>
-                  <span style={{ flex: 1, fontSize: 11, color: suggestion.reason === 'subir' ? S.good : S.dim, lineHeight: 1.4 }}>
-                    {suggestion.note}
-                  </span>
-                  {/* Las series arrancan con el máximo de la última vez; el
-                      peso sugerido se aplica sólo si el usuario lo pide. */}
-                  {suggestion.kg > 0 && activeEx.sets.some((st) => !st.completed && !st.isWarmup && parseDecimal(st.kg) !== suggestion.kg) && (
-                    <button
-                      onClick={() => activeEx.sets.forEach((st, si) => {
-                        if (!st.completed && !st.isWarmup) updateSetValue(exIdx, si, 'kg', String(suggestion.kg))
-                      })}
-                      aria-label={`Usar ${formatKg(suggestion.kg)} kg en las series que faltan`}
-                      style={{
-                        flexShrink: 0, minHeight: 32, padding: '0 10px', borderRadius: 8,
-                        background: suggestion.reason === 'subir' ? 'rgba(52,211,153,0.16)' : S.surf2,
-                        border: `1px solid ${suggestion.reason === 'subir' ? 'rgba(52,211,153,0.40)' : S.line2}`,
-                        color: suggestion.reason === 'subir' ? S.good : S.ink,
-                        fontSize: 11, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
-                      }}
-                    >
-                      Usar {formatKg(suggestion.kg)} kg
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {/* Encabezado de la tabla */}
-              <div style={{ display: 'grid', gridTemplateColumns: byTime ? SET_GRID_TIEMPO : SET_GRID, padding: '0 14px 6px', gap: 8 }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: S.mute, textAlign: 'center' }}>Set</div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: S.mute, textAlign: 'center' }}>Anterior</div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: S.mute, textAlign: 'center' }}>
-                  {byTime ? (unit === 'min' ? 'Minutos' : 'Segundos') : 'KG'}
-                </div>
-                {!byTime && <div style={{ fontSize: 11, fontWeight: 600, color: S.mute, textAlign: 'center' }}>Reps</div>}
-                <div />
-              </div>
-
-              {/* Series */}
-              {activeEx.sets.map((set, setIdx) => (
-                <SetRow
-                  key={setIdx}
-                  exIdx={exIdx} setIdx={setIdx} set={set} prev={prevPorSerie[setIdx]}
-                  byTime={byTime} unit={unit}
-                  isBarbellLike={isBarbellLike}
-                  puedeBorrar={!set.completed && activeEx.sets.length > 1}
-                  onUpdate={updateSetValue}
-                  onToggleWarmup={toggleSetWarmup}
-                  onRemove={removeSetFromExercise}
-                  esProxima={exIdx === ejActual && setIdx === proximaSerie}
-                  pulso={finDescanso != null && exIdx === ejActual && setIdx === proximaSerie}
-                  recordGuardado={pr}
-                  esRecord={setIdx === recordIdx}
-                  onComplete={confirmarSerie}
-                />
-              ))}
-
-              <TipsRow exerciseId={ex.id} />
-
-              {/* Add set button */}
-              <div style={{ padding: '10px 16px 14px' }}>
-                <button onClick={() => addSetToExercise(exIdx)}
-                  style={{ background: S.surf2, border: `1px solid ${S.line2}`, borderRadius: 12, color: S.dim, fontSize: 13, fontWeight: 600, minHeight: 44, padding: '0 18px', cursor: 'pointer' }}>
-                  + Serie
-                </button>
-              </div>
-            </div>
-          )
-        })}
+        {bloques.map((bloque, bi) => (
+          <Fragment key={`${bi}-${bloque.nombre ?? ''}`}>
+            {bloque.nombre && (
+              <EncabezadoBloque nombre={bloque.nombre} cantidad={bloque.indices.length} primero={bi === 0} />
+            )}
+            {bloque.grupos.map((g) => (
+              g.tipo === 'suelto'
+                ? <Fragment key={activeWorkout.exercises[g.indices[0]].exerciseId}>{tarjetaEjercicio(activeWorkout.exercises[g.indices[0]], g.indices[0])}</Fragment>
+                : g.tipo === 'tabata'
+                  ? <Fragment key={`t-${activeWorkout.exercises[g.indices[0]].exerciseId}`}>{tarjetaTabata(g, bloque)}</Fragment>
+                  : <Fragment key={`g-${activeWorkout.exercises[g.indices[0]].exerciseId}`}>{tarjetaGrupo(g, bloque)}</Fragment>
+            ))}
+          </Fragment>
+        ))}
 
         {/* Sumar un ejercicio que no estaba en la rutina */}
         <div style={{ padding: '12px 16px 0' }}>
@@ -900,6 +1241,8 @@ export function ActiveWorkoutScreen() {
 
       <div aria-live="assertive" className="sr-only">{avisoDescanso}</div>
       {panelDescanso && <RestTimerOverlay onMinimize={() => setMinimizadoPara(activeWorkout.restEndsAt)} />}
+      {/* El cronómetro del tabata tapa todo; la pantalla sigue encendida por el useWakeLock de arriba. */}
+      {activeWorkout.tabata && <TabataOverlay />}
       {!descansando && finDescanso?.conPanel && <FinDescanso />}
 
       {/* Confirmar terminar o cancelar */}

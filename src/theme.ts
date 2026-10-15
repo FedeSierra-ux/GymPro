@@ -1,13 +1,15 @@
-import { colors, text, radius, TAP_MIN } from '../design-tokens.js'
+import { colors, text, radius, tabata, TAP_MIN } from '../design-tokens.js'
 
 /**
  * Los tokens de diseño para las pantallas que estilan en línea.
  *
- * Importá `S` en vez de volver a escribir la paleta: es el mismo objeto que
+ * Importá `S` en vez de volver a escribir la paleta: sale del mismo objeto que
  * alimenta a tailwind.config.js y a las variables CSS, así que un color
- * cambiado acá cambia en toda la app.
+ * cambiado acá cambia en toda la app. `S.tabata` son los colores del
+ * cronómetro del tabata (ver design-tokens.js): quedan aparte para que no se
+ * vuelvan variables CSS sueltas.
  */
-export const S: Record<keyof typeof colors, string> = colors
+export const S: Record<keyof typeof colors, string> & { tabata: Record<keyof typeof tabata, string> } = { ...colors, tabata }
 
 /** Escala tipográfica con piso de 11px. Ver design-tokens.js. */
 export const T: Record<keyof typeof text, number> = text
