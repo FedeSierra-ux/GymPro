@@ -31,8 +31,10 @@ function Icono({ d, size = 22 }: { d: 'x' | 'sonido' | 'mudo' | 'pausa' | 'play'
  * muestra lo que realmente va. La pantalla encendida la pide el entreno
  * (useWakeLock en ActiveWorkoutScreen), que sigue montado debajo.
  *
- * Colores: S.tabata (design-tokens.js). El trabajo va en el color claro; el
- * descanso vuelve al fondo oscuro de la app, así se distingue de un vistazo.
+ * Colores: S.tabata (design-tokens.js). Es un vidrio sobre el entreno, que
+ * se ve detrás desenfocado (.tabata-fase en index.css): en el trabajo, un velo
+ * claro con el anillo en coral; en el descanso, más oscuro, así se distingue
+ * de un vistazo.
  */
 export function TabataOverlay() {
   const exercises = useAllExercises()
@@ -139,15 +141,17 @@ export function TabataOverlay() {
   const circ = 2 * Math.PI * 124
   const offset = circ * (1 - (largo > 0 ? queda / largo : 0))
 
-  // Colores de la fase: trabajo en claro, descanso en el oscuro de la app.
-  const fondo = trabajo ? C.bg : S.bg
-  const tinta = trabajo ? C.ink : S.ink
+  // Colores de la fase: trabajo con el velo claro, descanso más oscuro.
+  // El último color de `fondo` es la capa de abajo; sin desenfoque, index.css
+  // la vuelve opaca para que no se lea el entreno a través.
+  const fondo = trabajo ? `linear-gradient(${C.bg}, ${C.bg}), ${C.scrim}` : C.restScrim
+  const tinta = C.ink
   const arco = trabajo ? C.ring : C.rest
   const riel = trabajo ? C.track : S.line2
-  const suave = trabajo ? C.soft : S.surf
+  const suave = C.soft
   const chip = trabajo ? C.chip : S.surf2
   const numero = trabajo ? C.ink : C.rest
-  const marcoMiniatura = trabajo ? S.bg : S.surf
+  const marcoMiniatura = S.bg
 
   const hechasEnSesion = rondaAlcanzada(tramos, t, tab.desdeRonda) - tab.desdeRonda
   const cerrarLabel = hechasEnSesion > 0

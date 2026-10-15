@@ -89,22 +89,27 @@ export const text = {
 export const TAP_MIN = 44
 
 /**
- * Cronómetro del tabata, a pantalla completa. Va en un solo lugar para que
- * cambiar el color sea cambiar estos valores y nada más (hoy: coral suave).
- * - bg / ink: fondo de la fase de trabajo y el texto encima.
- * - ring / track: el arco del anillo y su riel; también las rondas hechas.
+ * Cronómetro del tabata, a pantalla completa: un vidrio sobre el entreno, que
+ * se ve detrás desenfocado. Va en un solo lugar para que cambiar el color sea
+ * cambiar estos valores y nada más.
+ * - bg / scrim: el trabajo es un velo claro (bg) sobre una capa oscura (scrim);
+ *   el descanso, sólo una capa más oscura (restScrim).
+ * - ink: el texto. ring / track: el arco del anillo y su riel; también las
+ *   rondas hechas.
  * - chip: la píldora "Trabajo". soft: los botones redondos y "Sigue:".
  * - pause / pauseInk: el botón grande de pausa y su ícono.
- * - rest: en el descanso (fondo oscuro de la app), el anillo y el número.
+ * - rest: en el descanso, el anillo, el número y la pausa.
  */
 export const tabata = {
-  bg: '#F29A87',
-  ink: '#0C0E14',
-  ring: '#0C0E14',
-  track: 'rgba(12,14,20,.14)',
-  chip: 'rgba(12,14,20,.12)',
-  pause: '#0C0E14',
-  pauseInk: '#F29A87',
-  soft: 'rgba(12,14,20,.10)',
+  bg: 'rgba(236,238,244,.10)',
+  scrim: 'rgba(12,14,20,.55)',
+  restScrim: 'rgba(12,14,20,.82)',
+  ink: '#ECEEF4',
+  ring: '#F29A87',
+  track: 'rgba(236,238,244,.16)',
+  chip: 'rgba(236,238,244,.14)',
+  pause: '#E8634A',
+  pauseInk: '#0C0E14',
+  soft: 'rgba(236,238,244,.12)',
   rest: '#F29A87',
 }
