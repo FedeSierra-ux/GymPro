@@ -207,7 +207,10 @@ las variables CSS (`--bg`, `--acc`, `--mute`…) y `S`/`T`/`R` de
 verde es hecho, rojo es error. El texto de tercer nivel va en `mute` (`faint`
 sólo para trazos), y sobre coral el texto va oscuro (`onAcc`). Los colores del
 cronómetro del tabata están aparte, en `tabata` (`S.tabata`), para cambiarlos
-en un solo lugar.
+en un solo lugar. El
+cronómetro es un vidrio sobre el entreno, que se ve detrás desenfocado; si el
+navegador no desenfoca, o el teléfono pide menos transparencia, el fondo va
+opaco.
 
 ## Iconos
 

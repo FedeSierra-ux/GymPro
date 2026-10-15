@@ -257,6 +257,19 @@ h1, h2, h3, h4, h5, h6, p { margin: 0; padding: 0; }
   }
 }
 
+/* Cronómetro del tabata: vidrio sobre el entreno. Si el navegador no
+   desenfoca, o se pidió menos transparencia, la capa de abajo va opaca. */
+.tabata-fase {
+  -webkit-backdrop-filter: blur(20px) saturate(.4);
+  backdrop-filter: blur(20px) saturate(.4);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .tabata-fase { background-color: #0C0E14 !important; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .tabata-fase { background-color: #0C0E14 !important; }
+}
+
 /* Cronómetro del tabata en pantallas bajas (iPhone SE): todo más junto y sin
    la leyenda del pitido, para que la pausa entre sin scrollear. */
 @media (max-height: 680px) {

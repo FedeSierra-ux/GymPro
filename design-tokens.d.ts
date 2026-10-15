@@ -53,6 +53,8 @@ export declare const radius: {
 
 export declare const tabata: {
   bg: string
+  scrim: string
+  restScrim: string
   ink: string
   ring: string
   track: string
